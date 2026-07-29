@@ -212,6 +212,7 @@ public class SessionScreen extends BorderPane {
             this.imageView = imageView;
             getChildren().add(imageView);
             imageView.setPreserveRatio(true);
+            imageView.setSmooth(true);
             setMinSize(0, 0);
             setPrefSize(0, 0);
         }

@@ -2,6 +2,7 @@ package com.gesturedrawing.ui;
 
 import com.gesturedrawing.domain.GestureImage;
 import com.gesturedrawing.domain.SessionResult;
+import com.gesturedrawing.service.ImagePreloaderService;
 import com.gesturedrawing.service.SessionManager;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -18,25 +19,18 @@ import javafx.util.Duration;
 import java.util.function.Consumer;
 
 /**
- * Active gesture session viewer screen with downscaled async image loading,
- * next-pose prefetching, and active memory unloading (cleanup).
+ * Active gesture session viewer screen utilizing a 2-Image Pipeline (Current N + Next N+1 Preload)
+ * for instant zero-lag pose transitions and predictable memory usage.
  */
 public class SessionScreen extends BorderPane {
-    private static final double MAX_TARGET_WIDTH = 1920;
-    private static final double MAX_TARGET_HEIGHT = 1080;
-
     private final SessionManager sessionManager;
     private final Consumer<SessionResult> onSessionComplete;
+    private final ImagePreloaderService preloaderService = new ImagePreloaderService();
     private final ImageView imageView = new ImageView();
     private final Text timerText = new Text();
     private final Text counterText = new Text();
     private final Button pauseBtn = new Button("Pause (Space)");
     private Timeline timeline;
-
-    // Sliding Memory Window (Only current and next image objects retained in RAM)
-    private Image currentFxImage;
-    private Image nextFxImage;
-    private String nextFxImageUri;
 
     public SessionScreen(SessionManager sessionManager, Consumer<SessionResult> onSessionComplete) {
         this.sessionManager = sessionManager;
@@ -147,31 +141,20 @@ public class SessionScreen extends BorderPane {
     }
 
     /**
-     * Updates display with active unloading of previous image and prefetching next image.
+     * Updates display using the 2-Image Pipeline (Current N + Next N+1 Preload).
      */
     private void updateDisplay() {
         GestureImage current = sessionManager.getCurrentImage();
+        GestureImage next = sessionManager.getNextImage();
+
         if (current != null) {
             try {
-                // 1. Explicitly clear previous image reference to allow GC reclaiming
+                // 1. Explicitly clear previous image node reference
                 imageView.setImage(null);
-                currentFxImage = null;
 
-                String currentUri = current.getFileUri();
-
-                // 2. Reuse prefetched next image if available, else decode downscaled in background
-                if (nextFxImage != null && currentUri.equals(nextFxImageUri)) {
-                    currentFxImage = nextFxImage;
-                    nextFxImage = null;
-                    nextFxImageUri = null;
-                } else {
-                    currentFxImage = new Image(currentUri, MAX_TARGET_WIDTH, MAX_TARGET_HEIGHT, true, true, true);
-                }
-
-                imageView.setImage(currentFxImage);
-
-                // 3. Prefetch next image asynchronously (Sliding Memory Window)
-                prefetchNextImage();
+                // 2. Execute 2-Image pipeline load & prefetch
+                Image activeImage = preloaderService.loadAndPipeline(current, next);
+                imageView.setImage(activeImage);
 
             } catch (Exception ex) {
                 System.err.println("Error loading image: " + current.getFileUri());
@@ -179,17 +162,6 @@ public class SessionScreen extends BorderPane {
         }
         counterText.setText(String.format("Pose %d of %d", sessionManager.getCurrentIndex() + 1, sessionManager.getTotalImagesInSession()));
         updateTimerTextOnly();
-    }
-
-    private void prefetchNextImage() {
-        GestureImage next = sessionManager.getNextImage();
-        if (next != null) {
-            nextFxImageUri = next.getFileUri();
-            nextFxImage = new Image(nextFxImageUri, MAX_TARGET_WIDTH, MAX_TARGET_HEIGHT, true, true, true);
-        } else {
-            nextFxImage = null;
-            nextFxImageUri = null;
-        }
     }
 
     private void updateTimerTextOnly() {
@@ -215,11 +187,9 @@ public class SessionScreen extends BorderPane {
             timeline.stop();
             timeline = null;
         }
-        // Explicitly unbind and nullify image references
+        // Explicitly clear node reference and preloader buffer
         imageView.setImage(null);
-        currentFxImage = null;
-        nextFxImage = null;
-        nextFxImageUri = null;
+        preloaderService.clear();
 
         // Suggest garbage collection pass to release heap buffers
         System.gc();

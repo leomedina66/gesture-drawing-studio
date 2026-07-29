@@ -1,0 +1,129 @@
+/* Modern Dark Studio Aesthetic for Gesture Drawing App */
+
+.root {
+    -fx-base: #12141A;
+    -fx-background-color: #12141A;
+    -fx-font-family: 'Segoe UI', Helvetica, Arial, sans-serif;
+    -fx-text-fill: #F3F4F6;
+}
+
+/* Containers & Cards */
+.card-panel {
+    -fx-background-color: #1E222D;
+    -fx-background-radius: 12px;
+    -fx-padding: 24px;
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.4), 16, 0, 0, 8);
+}
+
+.header-title {
+    -fx-font-size: 28px;
+    -fx-font-weight: bold;
+    -fx-fill: #FFFFFF;
+}
+
+.subtitle {
+    -fx-font-size: 14px;
+    -fx-fill: #9CA3AF;
+}
+
+.label-text {
+    -fx-font-size: 14px;
+    -fx-font-weight: 600;
+    -fx-text-fill: #D1D5DB;
+}
+
+/* Inputs & Buttons */
+.text-input, .spinner {
+    -fx-background-color: #2D3342;
+    -fx-text-fill: #FFFFFF;
+    -fx-background-radius: 8px;
+    -fx-padding: 8px 12px;
+    -fx-font-size: 14px;
+    -fx-border-color: #374151;
+    -fx-border-radius: 8px;
+}
+
+.text-input:focused, .spinner:focused {
+    -fx-border-color: #6366F1;
+}
+
+.button-primary {
+    -fx-background-color: linear-gradient(to right, #6366F1, #4F46E5);
+    -fx-text-fill: #FFFFFF;
+    -fx-font-weight: bold;
+    -fx-font-size: 15px;
+    -fx-padding: 12px 24px;
+    -fx-background-radius: 8px;
+    -fx-cursor: hand;
+}
+
+.button-primary:hover {
+    -fx-background-color: linear-gradient(to right, #4F46E5, #4338CA);
+}
+
+.button-secondary {
+    -fx-background-color: #374151;
+    -fx-text-fill: #F3F4F6;
+    -fx-font-weight: 600;
+    -fx-font-size: 13px;
+    -fx-padding: 8px 16px;
+    -fx-background-radius: 6px;
+    -fx-cursor: hand;
+}
+
+.button-secondary:hover {
+    -fx-background-color: #4B5563;
+}
+
+.preset-button {
+    -fx-background-color: #2D3342;
+    -fx-text-fill: #E5E7EB;
+    -fx-font-size: 13px;
+    -fx-padding: 6px 14px;
+    -fx-background-radius: 20px;
+    -fx-cursor: hand;
+    -fx-border-color: #4B5563;
+    -fx-border-radius: 20px;
+}
+
+.preset-button:hover {
+    -fx-background-color: #6366F1;
+    -fx-text-fill: #FFFFFF;
+    -fx-border-color: #6366F1;
+}
+
+/* Session Viewer Layout */
+.timer-badge {
+    -fx-background-color: rgba(30, 34, 45, 0.9);
+    -fx-background-radius: 10px;
+    -fx-padding: 8px 16px;
+    -fx-border-color: #374151;
+    -fx-border-radius: 10px;
+}
+
+.timer-text {
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+    -fx-fill: #10B981;
+}
+
+.counter-text {
+    -fx-font-size: 13px;
+    -fx-font-weight: 600;
+    -fx-fill: #9CA3AF;
+}
+
+.bottom-control-bar {
+    -fx-background-color: #181B24;
+    -fx-border-color: #2D3342 transparent transparent transparent;
+    -fx-border-width: 1px;
+    -fx-padding: 14px 24px;
+}
+
+/* Gallery Thumbnails */
+.thumbnail-card {
+    -fx-background-color: #1E222D;
+    -fx-padding: 6px;
+    -fx-background-radius: 8px;
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.3), 8, 0, 0, 4);
+}

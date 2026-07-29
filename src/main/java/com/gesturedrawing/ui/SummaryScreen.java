@@ -1,0 +1,117 @@
+package com.gesturedrawing.ui;
+
+import com.gesturedrawing.domain.GestureImage;
+import com.gesturedrawing.domain.SessionResult;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.*;
+import javafx.scene.text.Text;
+
+import java.util.List;
+
+/**
+ * End-of-session screen showing overall stats and a thumbnail gallery of poses practiced.
+ */
+public class SummaryScreen extends VBox {
+
+    public SummaryScreen(SessionResult result, Runnable onNewSession) {
+        setSpacing(24);
+        setAlignment(Pos.TOP_CENTER);
+        setPadding(new Insets(32));
+
+        // Header Section
+        VBox headerBox = new VBox(8);
+        headerBox.setAlignment(Pos.CENTER);
+
+        Text title = new Text("Session Complete! 🎉");
+        title.getStyleClass().add("header-title");
+
+        Text subtitle = new Text("Great work! Here is a summary of the poses practiced in this session.");
+        subtitle.getStyleClass().add("subtitle");
+
+        headerBox.getChildren().addAll(title, subtitle);
+
+        // Stats Cards Bar
+        HBox statsBar = new HBox(20);
+        statsBar.setAlignment(Pos.CENTER);
+
+        VBox timeCard = createStatCard("TOTAL PRACTICE TIME", result.getFormattedTotalTime());
+        VBox countCard = createStatCard("POSES COMPLETED", String.valueOf(result.getCompletedImagesCount()));
+
+        statsBar.getChildren().addAll(timeCard, countCard);
+
+        // Thumbnail Gallery Section
+        VBox gallerySection = new VBox(12);
+        gallerySection.setAlignment(Pos.CENTER_LEFT);
+        gallerySection.setMaxWidth(720);
+
+        Label galleryTitle = new Label("Session Poses Gallery");
+        galleryTitle.getStyleClass().add("label-text");
+
+        FlowPane thumbnailGrid = new FlowPane();
+        thumbnailGrid.setHgap(12);
+        thumbnailGrid.setVgap(12);
+        thumbnailGrid.setPadding(new Insets(12));
+        thumbnailGrid.setStyle("-fx-background-color: #161821; -fx-background-radius: 8px;");
+
+        List<GestureImage> images = result.getImagesUsed();
+        if (images.isEmpty()) {
+            Label emptyLabel = new Label("No images were completed in this session.");
+            emptyLabel.setStyle("-fx-text-fill: #9CA3AF;");
+            thumbnailGrid.getChildren().add(emptyLabel);
+        } else {
+            for (GestureImage gestureImg : images) {
+                VBox thumbCard = new VBox();
+                thumbCard.getStyleClass().add("thumbnail-card");
+
+                ImageView thumbView = new ImageView();
+                try {
+                    Image img = new Image(gestureImg.getFileUri(), 140, 140, true, true, true);
+                    thumbView.setImage(img);
+                } catch (Exception ex) {
+                    System.err.println("Error rendering thumbnail: " + gestureImg.getFileName());
+                }
+
+                thumbCard.getChildren().add(thumbView);
+                thumbnailGrid.getChildren().add(thumbCard);
+            }
+        }
+
+        ScrollPane scrollPane = new ScrollPane(thumbnailGrid);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setMaxHeight(320);
+        scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
+
+        gallerySection.getChildren().addAll(galleryTitle, scrollPane);
+
+        // Action Buttons
+        Button newSessionBtn = new Button("Start New Session 🔄");
+        newSessionBtn.getStyleClass().add("button-primary");
+        newSessionBtn.setPrefWidth(240);
+        newSessionBtn.setOnAction(e -> onNewSession.run());
+
+        getChildren().addAll(headerBox, statsBar, gallerySection, newSessionBtn);
+    }
+
+    private VBox createStatCard(String labelText, String valueText) {
+        VBox card = new VBox(6);
+        card.setAlignment(Pos.CENTER);
+        card.setPadding(new Insets(16, 28, 16, 28));
+        card.getStyleClass().add("card-panel");
+        card.setPrefWidth(220);
+
+        Label label = new Label(labelText);
+        label.setStyle("-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #9CA3AF;");
+
+        Label value = new Label(valueText);
+        value.setStyle("-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #10B981;");
+
+        card.getChildren().addAll(label, value);
+        return card;
+    }
+}

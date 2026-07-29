@@ -35,6 +35,13 @@ public class SessionManager {
         return null;
     }
 
+    public GestureImage getNextImage() {
+        if (currentIndex + 1 < sessionImages.size()) {
+            return sessionImages.get(currentIndex + 1);
+        }
+        return null;
+    }
+
     public int getCurrentIndex() {
         return currentIndex;
     }

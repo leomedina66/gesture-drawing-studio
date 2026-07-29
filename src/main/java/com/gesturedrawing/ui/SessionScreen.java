@@ -18,9 +18,13 @@ import javafx.util.Duration;
 import java.util.function.Consumer;
 
 /**
- * Active gesture session viewer screen with image display, top-left timer, and bottom control bar.
+ * Active gesture session viewer screen with downscaled async image loading,
+ * next-pose prefetching, and active memory unloading (cleanup).
  */
 public class SessionScreen extends BorderPane {
+    private static final double MAX_TARGET_WIDTH = 1920;
+    private static final double MAX_TARGET_HEIGHT = 1080;
+
     private final SessionManager sessionManager;
     private final Consumer<SessionResult> onSessionComplete;
     private final ImageView imageView = new ImageView();
@@ -28,6 +32,11 @@ public class SessionScreen extends BorderPane {
     private final Text counterText = new Text();
     private final Button pauseBtn = new Button("Pause (Space)");
     private Timeline timeline;
+
+    // Sliding Memory Window (Only current and next image objects retained in RAM)
+    private Image currentFxImage;
+    private Image nextFxImage;
+    private String nextFxImageUri;
 
     public SessionScreen(SessionManager sessionManager, Consumer<SessionResult> onSessionComplete) {
         this.sessionManager = sessionManager;
@@ -137,18 +146,50 @@ public class SessionScreen extends BorderPane {
         }
     }
 
+    /**
+     * Updates display with active unloading of previous image and prefetching next image.
+     */
     private void updateDisplay() {
         GestureImage current = sessionManager.getCurrentImage();
         if (current != null) {
             try {
-                Image img = new Image(current.getFileUri(), true);
-                imageView.setImage(img);
+                // 1. Explicitly clear previous image reference to allow GC reclaiming
+                imageView.setImage(null);
+                currentFxImage = null;
+
+                String currentUri = current.getFileUri();
+
+                // 2. Reuse prefetched next image if available, else decode downscaled in background
+                if (nextFxImage != null && currentUri.equals(nextFxImageUri)) {
+                    currentFxImage = nextFxImage;
+                    nextFxImage = null;
+                    nextFxImageUri = null;
+                } else {
+                    currentFxImage = new Image(currentUri, MAX_TARGET_WIDTH, MAX_TARGET_HEIGHT, true, true, true);
+                }
+
+                imageView.setImage(currentFxImage);
+
+                // 3. Prefetch next image asynchronously (Sliding Memory Window)
+                prefetchNextImage();
+
             } catch (Exception ex) {
                 System.err.println("Error loading image: " + current.getFileUri());
             }
         }
         counterText.setText(String.format("Pose %d of %d", sessionManager.getCurrentIndex() + 1, sessionManager.getTotalImagesInSession()));
         updateTimerTextOnly();
+    }
+
+    private void prefetchNextImage() {
+        GestureImage next = sessionManager.getNextImage();
+        if (next != null) {
+            nextFxImageUri = next.getFileUri();
+            nextFxImage = new Image(nextFxImageUri, MAX_TARGET_WIDTH, MAX_TARGET_HEIGHT, true, true, true);
+        } else {
+            nextFxImage = null;
+            nextFxImageUri = null;
+        }
     }
 
     private void updateTimerTextOnly() {
@@ -166,11 +207,28 @@ public class SessionScreen extends BorderPane {
         }
     }
 
-    private void finishSession() {
+    /**
+     * Active memory cleanup method called when session ends or is cancelled.
+     */
+    public void cleanup() {
         if (timeline != null) {
             timeline.stop();
+            timeline = null;
         }
-        onSessionComplete.accept(sessionManager.createResult());
+        // Explicitly unbind and nullify image references
+        imageView.setImage(null);
+        currentFxImage = null;
+        nextFxImage = null;
+        nextFxImageUri = null;
+
+        // Suggest garbage collection pass to release heap buffers
+        System.gc();
+    }
+
+    private void finishSession() {
+        SessionResult result = sessionManager.createResult();
+        cleanup();
+        onSessionComplete.accept(result);
     }
 
     /**
@@ -184,9 +242,6 @@ public class SessionScreen extends BorderPane {
             this.imageView = imageView;
             getChildren().add(imageView);
             imageView.setPreserveRatio(true);
-            // CRITICAL FOR MODULAR RESPONSIVE LAYOUT:
-            // Force container minSize to 0,0 so BorderPane allocates space from window size
-            // rather than expanding to unscaled image dimensions.
             setMinSize(0, 0);
             setPrefSize(0, 0);
         }

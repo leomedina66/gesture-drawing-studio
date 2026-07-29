@@ -23,6 +23,7 @@ import java.util.List;
 public class MainApp extends Application {
     private Stage primaryStage;
     private Scene scene;
+    private SessionScreen activeSessionScreen;
     private final ImageLoaderService imageLoaderService = new ImageLoaderService();
     private final PreferencesService preferencesService = new PreferencesService();
 
@@ -54,18 +55,23 @@ public class MainApp extends Application {
             primaryStage.setMaximized(true);
         }
 
-        // Save window position and size on exit
-        primaryStage.setOnCloseRequest(e -> saveCurrentWindowBounds());
+        // Save window position and size on exit and cleanup session if active
+        primaryStage.setOnCloseRequest(e -> {
+            cleanupActiveSession();
+            saveCurrentWindowBounds();
+        });
 
         primaryStage.show();
     }
 
     private void showMainScreen() {
+        cleanupActiveSession();
         MainScreen mainScreen = new MainScreen(primaryStage, this::startSession);
         switchRoot(mainScreen);
     }
 
     private void startSession(SessionConfig config) {
+        cleanupActiveSession();
         List<GestureImage> images = imageLoaderService.loadImagesFromDirectory(config.getImageDirectory(), config.getTotalImages());
 
         if (images.isEmpty()) {
@@ -78,15 +84,23 @@ public class MainApp extends Application {
         }
 
         SessionManager sessionManager = new SessionManager(config, images);
-        SessionScreen sessionScreen = new SessionScreen(sessionManager, this::showSummaryScreen);
+        activeSessionScreen = new SessionScreen(sessionManager, this::showSummaryScreen);
 
-        switchRoot(sessionScreen);
-        sessionScreen.requestFocus();
+        switchRoot(activeSessionScreen);
+        activeSessionScreen.requestFocus();
     }
 
     private void showSummaryScreen(SessionResult result) {
+        cleanupActiveSession();
         SummaryScreen summaryScreen = new SummaryScreen(result, this::showMainScreen);
         switchRoot(summaryScreen);
+    }
+
+    private void cleanupActiveSession() {
+        if (activeSessionScreen != null) {
+            activeSessionScreen.cleanup();
+            activeSessionScreen = null;
+        }
     }
 
     /**

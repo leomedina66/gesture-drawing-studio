@@ -34,6 +34,14 @@ public class MainApp extends Application {
         primaryStage.setMinWidth(800);
         primaryStage.setMinHeight(600);
 
+        // Load custom application window and taskbar icon
+        try {
+            String iconUrl = getClass().getResource("/app-icon.jpg").toExternalForm();
+            primaryStage.getIcons().add(new javafx.scene.image.Image(iconUrl));
+        } catch (Exception ex) {
+            System.err.println("Could not load app icon: " + ex.getMessage());
+        }
+
         // Restore saved window dimensions, screen location, and maximized state
         double w = preferencesService.getWindowWidth(960);
         double h = preferencesService.getWindowHeight(680);

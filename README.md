@@ -1,61 +1,68 @@
 # 🎨 Gesture Drawing Studio
 
-A modern desktop application built for artists to practice gesture drawing with automated reference image sessions, timed countdowns, and non-repeating image selection.
+A modern, high-performance desktop application designed for artists to practice gesture drawing and figure studies with timed reference image sessions, non-repeating pose shuffling, and memory-optimized image pipelines.
 
 ---
 
-## ✨ Features
+## ✨ Key Features
 
-- 📁 **Local Folder Reference Support**: Scan any local folder for reference images (`.jpg`, `.jpeg`, `.png`, `.webp`, `.gif`).
+- 📁 **Local Reference Library**: Load any local directory containing reference images (`.jpg`, `.jpeg`, `.png`, `.webp`, `.gif`).
 - 🎲 **Non-Repeating Random Shuffle**: Automatically shuffles images so no pose repeats within a single session.
-- ⏱️ **Discrete Countdown Timer**: Custom pose duration with quick preset buttons (`30s`, `1 min`, `2 min`, `5 min`).
-- ⌨️ **Keyboard Controls**:
-  - `Space` — Pause / Resume session
-  - `Right Arrow` — Skip to next pose
-  - `Left Arrow` — Go to previous pose
-  - `Esc` — Finish session early
-- 📐 **Modular & Responsive UI**: Responsive image scaling that automatically adapts to window dimensions without cropping or distortion.
-- 💾 **Persistent Settings**: Automatically remembers your last selected reference folder, pose timer duration, pose count, window size, and monitor position across restarts.
-- 🖼️ **Post-Session Gallery**: Summary screen with total practice time, completed pose counts, and a thumbnail grid of practiced poses.
+- ⏱️ **Discrete Countdown Timer**: Custom pose duration with one-click presets (`30s`, `1 min`, `2 min`, `5 min`).
+- ⚡ **2-Image Memory Pipeline (Zero-Lag)**: Asynchronously pre-loads upcoming poses in the background for instant transitions without UI stutters or RAM leaks.
+- 🔍 **Crystal-Clear Native Resolution**: Renders full-resolution artwork with high-quality bilinear filtering for High-DPI / 4K displays.
+- 📐 **Responsive Modular Layout**: Controls and timer remain anchored and unobstructed while reference artwork scales dynamically to fit screen dimensions.
+- 💾 **Persistent Settings**: Automatically remembers your last used reference folder, duration, pose count, window dimensions, and screen position across restarts.
+- 🖼️ **Post-Session Gallery**: Displays summary statistics and a thumbnail grid of all poses completed during the session.
 
 ---
 
-## 🛠️ Technology Stack
+## ⌨️ Keyboard Controls
 
-- **Core Language**: Java 21 / 25
+| Key | Action |
+|---|---|
+| `Space` | Pause / Resume session timer |
+| `Right Arrow` | Skip to next pose |
+| `Left Arrow` | Return to previous pose |
+| `Esc` | Finish session early |
+
+---
+
+## 🛠️ Technology Stack & Architecture
+
+- **Language**: Java 21+
 - **UI Framework**: JavaFX 21 (`javafx-controls`, `javafx-graphics`)
 - **Build System**: Apache Maven (`pom.xml`)
-- **Testing Framework**: JUnit 5 (`junit-jupiter`)
+- **Testing**: JUnit 5 (`junit-jupiter`)
 
----
-
-## 🏗️ Project Architecture
+### Directory Structure
 
 ```
 gesture-drawing-app/
-├── pom.xml                                     # Maven Dependencies & Build Configuration
+├── pom.xml                                     # Maven dependencies & build settings
+├── README.md                                   # Project documentation
 ├── .gitignore                                  # Git exclusion rules
-├── README.md                                   # Project Overview & Guide
 └── src/
     ├── main/
     │   ├── java/
     │   │   └── com/
     │   │       └── gesturedrawing/
-    │   │           ├── MainApp.java            # JavaFX Application Launcher & Scene Orchestrator
+    │   │           ├── MainApp.java            # Main JavaFX launcher & scene manager
     │   │           ├── domain/
-    │   │           │   ├── GestureImage.java   # Image metadata & URI conversion
-    │   │           │   ├── SessionConfig.java  # Session configuration model & validations
-    │   │           │   └── SessionResult.java # Post-session metrics model
+    │   │           │   ├── GestureImage.java   # Image metadata representation
+    │   │           │   ├── SessionConfig.java  # Session configuration domain model
+    │   │           │   └── SessionResult.java # Session summary metrics
     │   │           ├── service/
-    │   │           │   ├── ImageLoaderService.java # Directory scanner & shuffle logic
-    │   │           │   ├── PreferencesService.java # Persistent user settings manager
-    │   │           │   └── SessionManager.java     # Active session state machine
+    │   │           │   ├── ImageLoaderService.java   # Directory scanner & shuffle logic
+    │   │           │   ├── ImagePreloaderService.java# 2-Image memory pipeline & preloading
+    │   │           │   ├── PreferencesService.java   # Persistent user preferences
+    │   │           │   └── SessionManager.java       # Session state machine
     │   │           └── ui/
-    │   │               ├── MainScreen.java     # Setup & config screen
-    │   │               ├── SessionScreen.java  # Fullscreen image viewer & timer controls
-    │   │               └── SummaryScreen.java  # End-of-session summary & thumbnail gallery
+    │   │               ├── MainScreen.java     # Session setup & settings view
+    │   │               ├── SessionScreen.java  # Active gesture viewer & controls
+    │   │               └── SummaryScreen.java  # End-of-session gallery & stats
     │   └── resources/
-    │       └── styles.css                      # Custom Studio Dark Theme stylesheet
+    │       └── styles.css                      # Studio dark theme stylesheet
     └── test/
         └── java/
             └── com/
@@ -64,23 +71,43 @@ gesture-drawing-app/
 
 ---
 
-## 🚀 How to Run
+## 🚀 Getting Started
 
-### Run from Command Line
-```powershell
-C:\Users\Amanda\.gemini\antigravity\tools\apache-maven-3.9.9\bin\mvn.cmd javafx:run -f C:\Users\Amanda\.gemini\antigravity\scratch\gesture-drawing-app
-```
+### Prerequisites
 
-### Run Tests
-```powershell
-C:\Users\Amanda\.gemini\antigravity\tools\apache-maven-3.9.9\bin\mvn.cmd clean test -f C:\Users\Amanda\.gemini\antigravity\scratch\gesture-drawing-app
-```
+- **Java JDK 21** or higher
+- **Apache Maven 3.8+**
+
+### Building and Running
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/leomedina66/gesture-drawing-studio.git
+   cd gesture-drawing-studio
+   ```
+
+2. **Run the application:**
+   ```bash
+   mvn javafx:run
+   ```
+
+3. **Run unit tests:**
+   ```bash
+   mvn clean test
+   ```
 
 ---
 
-## 🗺️ Roadmap (Future Releases)
+## 🗺️ Roadmap & Future Enhancements
 
-- [ ] **Version 2**: Practice History & Session Logs (saving date, duration, pose count to local file).
-- [ ] **Version 3**: Varied Session Intervals (e.g. 10x30s + 5x1m + 2x5m warm-ups).
-- [ ] **Version 4**: Practice Statistics & Graphs (Weekly/Monthly practice totals).
-- [ ] **Version 5**: Goal System (Weekly target minutes/poses).
+- [x] **Version 1 (MVP)**: Automated timed sessions, non-repeating shuffle, 2-image memory pipeline, persistent settings, and summary gallery.
+- [ ] **Version 2**: Practice History & Session Logs (saving practice dates, durations, and pose counts locally).
+- [ ] **Version 3**: Custom Warm-up Pipelines (e.g., 10x 30s + 5x 1m + 2x 5m interval sequences).
+- [ ] **Version 4**: Practice Analytics & Graphs (Weekly and monthly practice breakdown).
+- [ ] **Version 5**: Goal & Habit Tracking System (Weekly target minutes and pose quotas).
+
+---
+
+## 📄 License
+
+This project is open-source and available under the [MIT License](LICENSE).

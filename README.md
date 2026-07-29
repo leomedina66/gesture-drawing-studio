@@ -71,14 +71,21 @@ gesture-drawing-app/
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Download & Running
 
-### Prerequisites
+### Option 1: Standalone Windows App (Zero Setup)
+Download the latest pre-packaged **[Gesture-Drawing-Studio-Windows-x64.zip](https://github.com/leomedina66/gesture-drawing-studio/releases)**:
+1. Extract the `.zip` folder.
+2. Double-click **`Gesture Drawing Studio.exe`** to start drawing immediately!
+*(No Java, Maven, or setup required!)*
 
-- **Java JDK 21** or higher
+---
+
+### Option 2: Build & Run from Source
+
+#### Prerequisites
+- **Java JDK 21+**
 - **Apache Maven 3.8+**
-
-### Building and Running
 
 1. **Clone the repository:**
    ```bash
@@ -86,9 +93,14 @@ gesture-drawing-app/
    cd gesture-drawing-studio
    ```
 
-2. **Run the application:**
+2. **Run via Maven:**
    ```bash
    mvn javafx:run
+   ```
+
+3. **Build Standalone Executable Package (`.exe` + JRE):**
+   ```cmd
+   build-installer.bat
    ```
 
 3. **Run unit tests:**

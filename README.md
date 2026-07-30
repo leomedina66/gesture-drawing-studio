@@ -24,6 +24,9 @@ A modern, high-performance desktop application designed for artists to practice 
 | `Space` | Pause / Resume session timer |
 | `Right Arrow` | Skip to next pose |
 | `Left Arrow` | Return to previous pose |
+| `H` | Toggle Horizontal Flip (Espelhar) |
+| `G` | Toggle Grayscale / Black & White (Preto & Branco) |
+| `T` | Toggle Always on Top (Janela no Topo) |
 | `Esc` | Finish session early |
 
 ---

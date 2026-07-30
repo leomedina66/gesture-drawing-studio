@@ -14,7 +14,7 @@ import java.io.File;
 import java.util.function.Consumer;
 
 /**
- * Initial setup view where user selects image directory, session timer, and image count.
+ * Initial setup view where user selects image directory, session timer, image count, and Always-on-Top preference.
  */
 public class MainScreen extends VBox {
     private File selectedFolder;
@@ -116,6 +116,18 @@ public class MainScreen extends VBox {
         countSpinner.setEditable(true);
         countSection.getChildren().addAll(countLabel, countSpinner);
 
+        // Always on Top CheckBox Option
+        CheckBox alwaysOnTopCheckBox = new CheckBox("Always on Top (Keep window above Photoshop/Krita)");
+        alwaysOnTopCheckBox.setStyle("-fx-text-fill: #D1D5DB; -fx-font-weight: 600; -fx-font-size: 13px; -fx-cursor: hand;");
+        boolean initialAlwaysOnTop = preferencesService.isAlwaysOnTop(false);
+        alwaysOnTopCheckBox.setSelected(initialAlwaysOnTop);
+        stage.setAlwaysOnTop(initialAlwaysOnTop);
+
+        alwaysOnTopCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> {
+            stage.setAlwaysOnTop(newVal);
+            preferencesService.saveAlwaysOnTop(newVal);
+        });
+
         // Status Message Label
         statusLabel.setStyle("-fx-text-fill: #EF4444; -fx-font-weight: bold;");
 
@@ -138,7 +150,7 @@ public class MainScreen extends VBox {
             }
         });
 
-        card.getChildren().addAll(folderSection, timeSection, countSection, statusLabel, startButton);
+        card.getChildren().addAll(folderSection, timeSection, countSection, alwaysOnTopCheckBox, statusLabel, startButton);
         getChildren().addAll(headerBox, card);
     }
 }

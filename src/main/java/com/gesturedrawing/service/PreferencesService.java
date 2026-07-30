@@ -4,7 +4,7 @@ import java.io.File;
 import java.util.prefs.Preferences;
 
 /**
- * Service to manage persistent user preferences (e.g. last selected image folder, session timer, window size).
+ * Service to manage persistent user preferences (e.g. last selected image folder, session timer, window size, always on top state).
  */
 public class PreferencesService {
     private static final String KEY_LAST_FOLDER = "LAST_IMAGE_FOLDER";
@@ -15,6 +15,7 @@ public class PreferencesService {
     private static final String KEY_WINDOW_X = "WINDOW_X";
     private static final String KEY_WINDOW_Y = "WINDOW_Y";
     private static final String KEY_WINDOW_MAXIMIZED = "WINDOW_MAXIMIZED";
+    private static final String KEY_ALWAYS_ON_TOP = "ALWAYS_ON_TOP";
 
     private final Preferences preferences = Preferences.userNodeForPackage(PreferencesService.class);
 
@@ -74,5 +75,13 @@ public class PreferencesService {
 
     public boolean isWindowMaximized(boolean defaultValue) {
         return preferences.getBoolean(KEY_WINDOW_MAXIMIZED, defaultValue);
+    }
+
+    public void saveAlwaysOnTop(boolean alwaysOnTop) {
+        preferences.putBoolean(KEY_ALWAYS_ON_TOP, alwaysOnTop);
+    }
+
+    public boolean isAlwaysOnTop(boolean defaultValue) {
+        return preferences.getBoolean(KEY_ALWAYS_ON_TOP, defaultValue);
     }
 }

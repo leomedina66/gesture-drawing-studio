@@ -42,12 +42,15 @@ public class MainApp extends Application {
             System.err.println("Could not load app icon: " + ex.getMessage());
         }
 
-        // Restore saved window dimensions, screen location, and maximized state
+        // Restore saved window dimensions, screen location, maximized state, and always-on-top preference
         double w = preferencesService.getWindowWidth(960);
         double h = preferencesService.getWindowHeight(680);
         double x = preferencesService.getWindowX(-1);
         double y = preferencesService.getWindowY(-1);
         boolean isMaximized = preferencesService.isWindowMaximized(false);
+        boolean alwaysOnTop = preferencesService.isAlwaysOnTop(false);
+
+        primaryStage.setAlwaysOnTop(alwaysOnTop);
 
         MainScreen mainScreen = new MainScreen(primaryStage, this::startSession);
         scene = new Scene(mainScreen, w, h);
@@ -92,7 +95,7 @@ public class MainApp extends Application {
         }
 
         SessionManager sessionManager = new SessionManager(config, images);
-        activeSessionScreen = new SessionScreen(sessionManager, this::showSummaryScreen);
+        activeSessionScreen = new SessionScreen(primaryStage, sessionManager, this::showSummaryScreen);
 
         switchRoot(activeSessionScreen);
         activeSessionScreen.requestFocus();

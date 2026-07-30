@@ -3,28 +3,33 @@ package com.gesturedrawing.ui;
 import com.gesturedrawing.domain.GestureImage;
 import com.gesturedrawing.domain.SessionResult;
 import com.gesturedrawing.service.ImagePreloaderService;
+import com.gesturedrawing.service.PreferencesService;
 import com.gesturedrawing.service.SessionManager;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckMenuItem;
+import javafx.scene.control.ContextMenu;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.*;
 import javafx.scene.text.Text;
+import javafx.stage.Stage;
 import javafx.util.Duration;
 
 import java.util.function.Consumer;
 
 /**
- * Active gesture session viewer screen utilizing a 2-Image Pipeline (Current N + Next N+1 Preload)
- * for instant zero-lag pose transitions and predictable memory usage.
+ * Active gesture session viewer screen with Always-on-Top right-click ContextMenu,
+ * shortcut key 'T', and 2-Image preloader memory pipeline.
  */
 public class SessionScreen extends BorderPane {
     private final SessionManager sessionManager;
     private final Consumer<SessionResult> onSessionComplete;
+    private final PreferencesService preferencesService = new PreferencesService();
     private final ImagePreloaderService preloaderService = new ImagePreloaderService();
     private final ImageView imageView = new ImageView();
     private final Text timerText = new Text();
@@ -32,7 +37,7 @@ public class SessionScreen extends BorderPane {
     private final Button pauseBtn = new Button("Pause (Space)");
     private Timeline timeline;
 
-    public SessionScreen(SessionManager sessionManager, Consumer<SessionResult> onSessionComplete) {
+    public SessionScreen(Stage stage, SessionManager sessionManager, Consumer<SessionResult> onSessionComplete) {
         this.sessionManager = sessionManager;
         this.onSessionComplete = onSessionComplete;
 
@@ -88,7 +93,22 @@ public class SessionScreen extends BorderPane {
         controlBar.getChildren().addAll(prevBtn, pauseBtn, nextBtn, stopBtn);
         setBottom(controlBar);
 
-        // Keyboard Shortcuts
+        // 4. ALWAYS ON TOP CONTEXT MENU (Right Click)
+        CheckMenuItem alwaysOnTopItem = new CheckMenuItem("Always on Top (T)");
+        alwaysOnTopItem.setSelected(stage.isAlwaysOnTop());
+        alwaysOnTopItem.setOnAction(e -> {
+            boolean newState = alwaysOnTopItem.isSelected();
+            stage.setAlwaysOnTop(newState);
+            preferencesService.saveAlwaysOnTop(newState);
+        });
+
+        ContextMenu contextMenu = new ContextMenu(alwaysOnTopItem);
+        setOnContextMenuRequested(event -> {
+            alwaysOnTopItem.setSelected(stage.isAlwaysOnTop());
+            contextMenu.show(this, event.getScreenX(), event.getScreenY());
+        });
+
+        // 5. KEYBOARD SHORTCUTS
         setOnKeyPressed(event -> {
             if (event.getCode() == KeyCode.SPACE) {
                 togglePause();
@@ -100,6 +120,11 @@ public class SessionScreen extends BorderPane {
                 updateDisplay();
             } else if (event.getCode() == KeyCode.ESCAPE) {
                 finishSession();
+            } else if (event.getCode() == KeyCode.T) {
+                boolean newState = !stage.isAlwaysOnTop();
+                stage.setAlwaysOnTop(newState);
+                preferencesService.saveAlwaysOnTop(newState);
+                alwaysOnTopItem.setSelected(newState);
             }
         });
 

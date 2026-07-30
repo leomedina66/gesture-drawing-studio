@@ -8,19 +8,22 @@ import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.text.Text;
 import javafx.stage.DirectoryChooser;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
 import java.io.File;
+import java.util.List;
 import java.util.function.Consumer;
 
 /**
- * Initial setup view where user selects image directory, session timer, image count, Always-on-Top preference,
- * and visual filters (Flip Horizontal & Grayscale).
+ * Initial setup view where user selects image source (Whole Directory or Specific Files),
+ * session timer, image count, Always-on-Top, and visual filter options.
  */
 public class MainScreen extends VBox {
     private File selectedFolder;
+    private List<File> selectedFiles;
     private final PreferencesService preferencesService = new PreferencesService();
-    private final TextField folderPathField = new TextField();
+    private final TextField selectionPathField = new TextField();
     private final Spinner<Integer> timeSpinner = new Spinner<>(5, 3600, 60, 5);
     private final Spinner<Integer> countSpinner = new Spinner<>(1, 500, 10, 1);
     private final Label statusLabel = new Label();
@@ -30,11 +33,11 @@ public class MainScreen extends VBox {
         setAlignment(Pos.CENTER);
         setPadding(new Insets(40));
 
-        // Restore saved user preferences
+        // Restore saved folder preference
         File lastFolder = preferencesService.getLastFolder();
         if (lastFolder != null) {
             selectedFolder = lastFolder;
-            folderPathField.setText(lastFolder.getAbsolutePath());
+            selectionPathField.setText("Folder: " + lastFolder.getAbsolutePath());
         }
 
         int lastTime = preferencesService.getLastSecondsPerImage(60);
@@ -55,22 +58,23 @@ public class MainScreen extends VBox {
 
         // Configuration Card Panel
         VBox card = new VBox(16);
-        card.setMaxWidth(520);
+        card.setMaxWidth(540);
         card.getStyleClass().add("card-panel");
 
-        // Folder Chooser Section
-        VBox folderSection = new VBox(8);
-        Label folderLabel = new Label("Image Reference Folder");
-        folderLabel.getStyleClass().add("label-text");
+        // Image Selection Source Section (Folder OR Files)
+        VBox sourceSection = new VBox(8);
+        Label sourceLabel = new Label("Reference Image Source");
+        sourceLabel.getStyleClass().add("label-text");
 
-        HBox folderBox = new HBox(10);
-        folderPathField.setPromptText("No folder selected...");
-        folderPathField.setEditable(false);
-        HBox.setHgrow(folderPathField, Priority.ALWAYS);
+        selectionPathField.setPromptText("No folder or files selected...");
+        selectionPathField.setEditable(false);
 
-        Button browseBtn = new Button("Browse...");
-        browseBtn.getStyleClass().add("button-secondary");
-        browseBtn.setOnAction(e -> {
+        HBox btnBox = new HBox(10);
+        btnBox.setAlignment(Pos.CENTER_LEFT);
+
+        Button browseFolderBtn = new Button("Select Folder 📁");
+        browseFolderBtn.getStyleClass().add("button-secondary");
+        browseFolderBtn.setOnAction(e -> {
             DirectoryChooser chooser = new DirectoryChooser();
             chooser.setTitle("Select Reference Images Folder");
             if (selectedFolder != null && selectedFolder.exists()) {
@@ -79,13 +83,38 @@ public class MainScreen extends VBox {
             File folder = chooser.showDialog(stage);
             if (folder != null) {
                 selectedFolder = folder;
-                folderPathField.setText(folder.getAbsolutePath());
+                selectedFiles = null;
+                selectionPathField.setText("Folder: " + folder.getAbsolutePath());
                 statusLabel.setText("");
                 preferencesService.saveLastFolder(folder);
             }
         });
-        folderBox.getChildren().addAll(folderPathField, browseBtn);
-        folderSection.getChildren().addAll(folderLabel, folderBox);
+
+        Button browseFilesBtn = new Button("Select Files 🖼️");
+        browseFilesBtn.getStyleClass().add("button-secondary");
+        browseFilesBtn.setOnAction(e -> {
+            FileChooser chooser = new FileChooser();
+            chooser.setTitle("Select Specific Reference Images");
+            chooser.getExtensionFilters().add(
+                    new FileChooser.ExtensionFilter("Image Files", "*.jpg", "*.jpeg", "*.png", "*.webp", "*.gif", "*.bmp")
+            );
+            if (selectedFolder != null && selectedFolder.exists()) {
+                chooser.setInitialDirectory(selectedFolder);
+            }
+            List<File> files = chooser.showOpenMultipleDialog(stage);
+            if (files != null && !files.isEmpty()) {
+                selectedFiles = files;
+                selectedFolder = files.get(0).getParentFile();
+                selectionPathField.setText(files.size() + " files selected (" + files.get(0).getName() + "...)");
+                statusLabel.setText("");
+                if (selectedFolder != null) {
+                    preferencesService.saveLastFolder(selectedFolder);
+                }
+            }
+        });
+
+        btnBox.getChildren().addAll(browseFolderBtn, browseFilesBtn);
+        sourceSection.getChildren().addAll(sourceLabel, selectionPathField, btnBox);
 
         // Timer Duration Section
         VBox timeSection = new VBox(10);
@@ -117,7 +146,7 @@ public class MainScreen extends VBox {
         countSpinner.setEditable(true);
         countSection.getChildren().addAll(countLabel, countSpinner);
 
-        // Visual Filters & Options Section
+        // Visual Filters & Display Options Section
         VBox optionsSection = new VBox(10);
         Label optionsLabel = new Label("Session Display Options");
         optionsLabel.getStyleClass().add("label-text");
@@ -155,27 +184,37 @@ public class MainScreen extends VBox {
         startButton.setMaxWidth(Double.MAX_VALUE);
         startButton.getStyleClass().add("button-primary");
         startButton.setOnAction(e -> {
-            if (selectedFolder == null) {
-                statusLabel.setText("Please select a folder containing images first.");
+            if (selectedFiles == null && selectedFolder == null) {
+                statusLabel.setText("Please select a folder or image files first.");
                 return;
             }
             try {
-                preferencesService.saveLastFolder(selectedFolder);
                 preferencesService.saveLastSessionSettings(timeSpinner.getValue(), countSpinner.getValue());
-                SessionConfig config = new SessionConfig(
-                        selectedFolder,
-                        timeSpinner.getValue(),
-                        countSpinner.getValue(),
-                        flipCheckBox.isSelected(),
-                        grayscaleCheckBox.isSelected()
-                );
+                SessionConfig config;
+                if (selectedFiles != null && !selectedFiles.isEmpty()) {
+                    config = new SessionConfig(
+                            selectedFiles,
+                            timeSpinner.getValue(),
+                            countSpinner.getValue(),
+                            flipCheckBox.isSelected(),
+                            grayscaleCheckBox.isSelected()
+                    );
+                } else {
+                    config = new SessionConfig(
+                            selectedFolder,
+                            timeSpinner.getValue(),
+                            countSpinner.getValue(),
+                            flipCheckBox.isSelected(),
+                            grayscaleCheckBox.isSelected()
+                    );
+                }
                 onStartSession.accept(config);
             } catch (Exception ex) {
                 statusLabel.setText(ex.getMessage());
             }
         });
 
-        card.getChildren().addAll(folderSection, timeSection, countSection, optionsSection, statusLabel, startButton);
+        card.getChildren().addAll(sourceSection, timeSection, countSection, optionsSection, statusLabel, startButton);
         getChildren().addAll(headerBox, card);
     }
 }

@@ -9,37 +9,70 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Service responsible for scanning directory folders and extracting valid image files.
+ * Service responsible for scanning directory folders or arbitrary file lists and extracting valid image files.
+ * Features a Smart Pose Recycling Engine to loop/shuffle poses seamlessly if available images < total target session poses.
  */
 public class ImageLoaderService {
     private static final Set<String> SUPPORTED_EXTENSIONS = Set.of("jpg", "jpeg", "png", "webp", "gif", "bmp");
 
-    public List<GestureImage> loadImagesFromDirectory(File folder, int maxImagesRequested) {
+    public List<GestureImage> loadImagesFromDirectory(File folder, int targetCount) {
         if (folder == null || !folder.exists() || !folder.isDirectory()) {
             return Collections.emptyList();
         }
-
         File[] files = folder.listFiles();
         if (files == null) {
+            return Collections.emptyList();
+        }
+        return loadImagesFromFiles(List.of(files), targetCount);
+    }
+
+    public List<GestureImage> loadImagesFromFiles(List<File> files, int targetCount) {
+        if (files == null || files.isEmpty()) {
             return Collections.emptyList();
         }
 
         List<GestureImage> validImages = new ArrayList<>();
         for (File file : files) {
-            if (file.isFile() && isSupportedImage(file)) {
+            if (file != null && file.isFile() && isSupportedImage(file)) {
                 validImages.add(new GestureImage(file));
             }
         }
 
-        // Shuffle images to guarantee random order without repetitions
-        Collections.shuffle(validImages);
-
-        // Limit to total requested images if validImages is larger
-        if (maxImagesRequested > 0 && validImages.size() > maxImagesRequested) {
-            return validImages.subList(0, maxImagesRequested);
+        if (validImages.isEmpty()) {
+            return Collections.emptyList();
         }
 
-        return validImages;
+        // Case 1: Sufficient unique images available -> shuffle and slice exact count
+        if (validImages.size() >= targetCount) {
+            List<GestureImage> shuffled = new ArrayList<>(validImages);
+            Collections.shuffle(shuffled);
+            return shuffled.subList(0, targetCount);
+        }
+
+        // Case 2: Fewer images available than requested -> Smart Pose Recycling Loop
+        List<GestureImage> recycledList = new ArrayList<>();
+        List<GestureImage> pool = new ArrayList<>(validImages);
+
+        while (recycledList.size() < targetCount) {
+            Collections.shuffle(pool);
+
+            // Avoid back-to-back duplicates across loop boundaries if pool has > 1 item
+            if (!recycledList.isEmpty() && pool.size() > 1) {
+                GestureImage lastAdded = recycledList.get(recycledList.size() - 1);
+                if (pool.get(0).equals(lastAdded)) {
+                    Collections.swap(pool, 0, 1);
+                }
+            }
+
+            for (GestureImage img : pool) {
+                recycledList.add(img);
+                if (recycledList.size() == targetCount) {
+                    break;
+                }
+            }
+        }
+
+        return recycledList;
     }
 
     private boolean isSupportedImage(File file) {

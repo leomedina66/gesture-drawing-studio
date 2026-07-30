@@ -83,13 +83,13 @@ public class MainApp extends Application {
 
     private void startSession(SessionConfig config) {
         cleanupActiveSession();
-        List<GestureImage> images = imageLoaderService.loadImagesFromDirectory(config.getImageDirectory(), config.getTotalImages());
+        List<GestureImage> images = imageLoaderService.loadImagesFromFiles(config.getSelectedFiles(), config.getTotalImages());
 
         if (images.isEmpty()) {
             Alert alert = new Alert(Alert.AlertType.WARNING);
             alert.setTitle("No Images Found");
-            alert.setHeaderText("No valid image files in folder");
-            alert.setContentText("The selected folder does not contain supported image files (.jpg, .jpeg, .png, .webp). Please choose another folder.");
+            alert.setHeaderText("No valid image files found");
+            alert.setContentText("The selected folder or files do not contain supported image files (.jpg, .jpeg, .png, .webp). Please select another source.");
             alert.showAndWait();
             return;
         }

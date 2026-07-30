@@ -16,6 +16,16 @@ class SessionConfigTest {
         assertEquals(tempDir, config.getImageDirectory());
         assertEquals(60, config.getSecondsPerImage());
         assertEquals(10, config.getTotalImages());
+        assertFalse(config.isDefaultFlipped());
+        assertFalse(config.isDefaultGrayscale());
+    }
+
+    @Test
+    void shouldSupportVisualFilterFlags(@TempDir File tempDir) {
+        SessionConfig config = new SessionConfig(tempDir, 30, 5, true, true);
+
+        assertTrue(config.isDefaultFlipped());
+        assertTrue(config.isDefaultGrayscale());
     }
 
     @Test

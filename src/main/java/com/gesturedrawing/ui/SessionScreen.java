@@ -1,6 +1,7 @@
 package com.gesturedrawing.ui;
 
 import com.gesturedrawing.domain.GestureImage;
+import com.gesturedrawing.domain.SessionConfig;
 import com.gesturedrawing.domain.SessionResult;
 import com.gesturedrawing.service.ImagePreloaderService;
 import com.gesturedrawing.service.PreferencesService;
@@ -12,6 +13,7 @@ import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.ContextMenu;
+import javafx.scene.effect.ColorAdjust;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
@@ -23,8 +25,8 @@ import javafx.util.Duration;
 import java.util.function.Consumer;
 
 /**
- * Active gesture session viewer screen with Always-on-Top right-click ContextMenu,
- * shortcut key 'T', and 2-Image preloader memory pipeline.
+ * Active gesture session viewer screen supporting visual filters (Horizontal Flip & Grayscale),
+ * Always-on-Top right-click ContextMenu, keyboard shortcuts (H, G, T), and 2-Image preloader pipeline.
  */
 public class SessionScreen extends BorderPane {
     private final SessionManager sessionManager;
@@ -37,9 +39,16 @@ public class SessionScreen extends BorderPane {
     private final Button pauseBtn = new Button("Pause (Space)");
     private Timeline timeline;
 
-    public SessionScreen(Stage stage, SessionManager sessionManager, Consumer<SessionResult> onSessionComplete) {
+    private boolean isFlipped;
+    private boolean isGrayscale;
+    private final ColorAdjust grayscaleAdjust = new ColorAdjust();
+
+    public SessionScreen(Stage stage, SessionConfig config, SessionManager sessionManager, Consumer<SessionResult> onSessionComplete) {
         this.sessionManager = sessionManager;
         this.onSessionComplete = onSessionComplete;
+        this.isFlipped = config.isDefaultFlipped();
+        this.isGrayscale = config.isDefaultGrayscale();
+        this.grayscaleAdjust.setSaturation(-1.0);
 
         setStyle("-fx-background-color: #0F1117;");
 
@@ -93,7 +102,7 @@ public class SessionScreen extends BorderPane {
         controlBar.getChildren().addAll(prevBtn, pauseBtn, nextBtn, stopBtn);
         setBottom(controlBar);
 
-        // 4. ALWAYS ON TOP CONTEXT MENU (Right Click)
+        // 4. CONTEXT MENU (Right Click)
         CheckMenuItem alwaysOnTopItem = new CheckMenuItem("Always on Top (T)");
         alwaysOnTopItem.setSelected(stage.isAlwaysOnTop());
         alwaysOnTopItem.setOnAction(e -> {
@@ -102,9 +111,25 @@ public class SessionScreen extends BorderPane {
             preferencesService.saveAlwaysOnTop(newState);
         });
 
-        ContextMenu contextMenu = new ContextMenu(alwaysOnTopItem);
+        CheckMenuItem flipItem = new CheckMenuItem("Flip Horizontal (H)");
+        flipItem.setSelected(isFlipped);
+        flipItem.setOnAction(e -> {
+            isFlipped = flipItem.isSelected();
+            applyVisualFilters();
+        });
+
+        CheckMenuItem grayscaleItem = new CheckMenuItem("Grayscale / Black & White (G)");
+        grayscaleItem.setSelected(isGrayscale);
+        grayscaleItem.setOnAction(e -> {
+            isGrayscale = grayscaleItem.isSelected();
+            applyVisualFilters();
+        });
+
+        ContextMenu contextMenu = new ContextMenu(alwaysOnTopItem, flipItem, grayscaleItem);
         setOnContextMenuRequested(event -> {
             alwaysOnTopItem.setSelected(stage.isAlwaysOnTop());
+            flipItem.setSelected(isFlipped);
+            grayscaleItem.setSelected(isGrayscale);
             contextMenu.show(this, event.getScreenX(), event.getScreenY());
         });
 
@@ -125,12 +150,25 @@ public class SessionScreen extends BorderPane {
                 stage.setAlwaysOnTop(newState);
                 preferencesService.saveAlwaysOnTop(newState);
                 alwaysOnTopItem.setSelected(newState);
+            } else if (event.getCode() == KeyCode.H) {
+                isFlipped = !isFlipped;
+                applyVisualFilters();
+                flipItem.setSelected(isFlipped);
+            } else if (event.getCode() == KeyCode.G) {
+                isGrayscale = !isGrayscale;
+                applyVisualFilters();
+                grayscaleItem.setSelected(isGrayscale);
             }
         });
 
         // Initialize display and start timer loop
         updateDisplay();
         startTimer();
+    }
+
+    private void applyVisualFilters() {
+        imageView.setScaleX(isFlipped ? -1.0 : 1.0);
+        imageView.setEffect(isGrayscale ? grayscaleAdjust : null);
     }
 
     private void startTimer() {
@@ -180,6 +218,7 @@ public class SessionScreen extends BorderPane {
                 // 2. Execute 2-Image pipeline load & prefetch
                 Image activeImage = preloaderService.loadAndPipeline(current, next);
                 imageView.setImage(activeImage);
+                applyVisualFilters();
 
             } catch (Exception ex) {
                 System.err.println("Error loading image: " + current.getFileUri());

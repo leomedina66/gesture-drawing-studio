@@ -95,7 +95,7 @@ public class MainApp extends Application {
         }
 
         SessionManager sessionManager = new SessionManager(config, images);
-        activeSessionScreen = new SessionScreen(primaryStage, sessionManager, this::showSummaryScreen);
+        activeSessionScreen = new SessionScreen(primaryStage, config, sessionManager, this::showSummaryScreen);
 
         switchRoot(activeSessionScreen);
         activeSessionScreen.requestFocus();

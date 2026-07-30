@@ -4,7 +4,7 @@ import java.io.File;
 import java.util.prefs.Preferences;
 
 /**
- * Service to manage persistent user preferences (e.g. last selected image folder, session timer, window size, always on top state).
+ * Service to manage persistent user preferences (e.g. last selected image folder, session timer, window size, visual filter defaults).
  */
 public class PreferencesService {
     private static final String KEY_LAST_FOLDER = "LAST_IMAGE_FOLDER";
@@ -16,6 +16,8 @@ public class PreferencesService {
     private static final String KEY_WINDOW_Y = "WINDOW_Y";
     private static final String KEY_WINDOW_MAXIMIZED = "WINDOW_MAXIMIZED";
     private static final String KEY_ALWAYS_ON_TOP = "ALWAYS_ON_TOP";
+    private static final String KEY_DEFAULT_FLIPPED = "DEFAULT_FLIPPED";
+    private static final String KEY_DEFAULT_GRAYSCALE = "DEFAULT_GRAYSCALE";
 
     private final Preferences preferences = Preferences.userNodeForPackage(PreferencesService.class);
 
@@ -83,5 +85,21 @@ public class PreferencesService {
 
     public boolean isAlwaysOnTop(boolean defaultValue) {
         return preferences.getBoolean(KEY_ALWAYS_ON_TOP, defaultValue);
+    }
+
+    public void saveDefaultFlipped(boolean flipped) {
+        preferences.putBoolean(KEY_DEFAULT_FLIPPED, flipped);
+    }
+
+    public boolean isDefaultFlipped(boolean defaultValue) {
+        return preferences.getBoolean(KEY_DEFAULT_FLIPPED, defaultValue);
+    }
+
+    public void saveDefaultGrayscale(boolean grayscale) {
+        preferences.putBoolean(KEY_DEFAULT_GRAYSCALE, grayscale);
+    }
+
+    public boolean isDefaultGrayscale(boolean defaultValue) {
+        return preferences.getBoolean(KEY_DEFAULT_GRAYSCALE, defaultValue);
     }
 }

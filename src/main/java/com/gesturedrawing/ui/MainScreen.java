@@ -14,7 +14,8 @@ import java.io.File;
 import java.util.function.Consumer;
 
 /**
- * Initial setup view where user selects image directory, session timer, image count, and Always-on-Top preference.
+ * Initial setup view where user selects image directory, session timer, image count, Always-on-Top preference,
+ * and visual filters (Flip Horizontal & Grayscale).
  */
 public class MainScreen extends VBox {
     private File selectedFolder;
@@ -53,7 +54,7 @@ public class MainScreen extends VBox {
         headerBox.getChildren().addAll(title, subtitle);
 
         // Configuration Card Panel
-        VBox card = new VBox(20);
+        VBox card = new VBox(16);
         card.setMaxWidth(520);
         card.getStyleClass().add("card-panel");
 
@@ -116,8 +117,12 @@ public class MainScreen extends VBox {
         countSpinner.setEditable(true);
         countSection.getChildren().addAll(countLabel, countSpinner);
 
-        // Always on Top CheckBox Option
-        CheckBox alwaysOnTopCheckBox = new CheckBox("Always on Top (Keep window above Photoshop/Krita)");
+        // Visual Filters & Options Section
+        VBox optionsSection = new VBox(10);
+        Label optionsLabel = new Label("Session Display Options");
+        optionsLabel.getStyleClass().add("label-text");
+
+        CheckBox alwaysOnTopCheckBox = new CheckBox("Always on Top (Keep window above other apps)");
         alwaysOnTopCheckBox.setStyle("-fx-text-fill: #D1D5DB; -fx-font-weight: 600; -fx-font-size: 13px; -fx-cursor: hand;");
         boolean initialAlwaysOnTop = preferencesService.isAlwaysOnTop(false);
         alwaysOnTopCheckBox.setSelected(initialAlwaysOnTop);
@@ -127,6 +132,20 @@ public class MainScreen extends VBox {
             stage.setAlwaysOnTop(newVal);
             preferencesService.saveAlwaysOnTop(newVal);
         });
+
+        CheckBox flipCheckBox = new CheckBox("Flip Horizontal by default (H)");
+        flipCheckBox.setStyle("-fx-text-fill: #D1D5DB; -fx-font-weight: 600; -fx-font-size: 13px; -fx-cursor: hand;");
+        boolean initialFlipped = preferencesService.isDefaultFlipped(false);
+        flipCheckBox.setSelected(initialFlipped);
+        flipCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> preferencesService.saveDefaultFlipped(newVal));
+
+        CheckBox grayscaleCheckBox = new CheckBox("Grayscale / Black & White by default (G)");
+        grayscaleCheckBox.setStyle("-fx-text-fill: #D1D5DB; -fx-font-weight: 600; -fx-font-size: 13px; -fx-cursor: hand;");
+        boolean initialGrayscale = preferencesService.isDefaultGrayscale(false);
+        grayscaleCheckBox.setSelected(initialGrayscale);
+        grayscaleCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> preferencesService.saveDefaultGrayscale(newVal));
+
+        optionsSection.getChildren().addAll(optionsLabel, alwaysOnTopCheckBox, flipCheckBox, grayscaleCheckBox);
 
         // Status Message Label
         statusLabel.setStyle("-fx-text-fill: #EF4444; -fx-font-weight: bold;");
@@ -143,14 +162,20 @@ public class MainScreen extends VBox {
             try {
                 preferencesService.saveLastFolder(selectedFolder);
                 preferencesService.saveLastSessionSettings(timeSpinner.getValue(), countSpinner.getValue());
-                SessionConfig config = new SessionConfig(selectedFolder, timeSpinner.getValue(), countSpinner.getValue());
+                SessionConfig config = new SessionConfig(
+                        selectedFolder,
+                        timeSpinner.getValue(),
+                        countSpinner.getValue(),
+                        flipCheckBox.isSelected(),
+                        grayscaleCheckBox.isSelected()
+                );
                 onStartSession.accept(config);
             } catch (Exception ex) {
                 statusLabel.setText(ex.getMessage());
             }
         });
 
-        card.getChildren().addAll(folderSection, timeSection, countSection, alwaysOnTopCheckBox, statusLabel, startButton);
+        card.getChildren().addAll(folderSection, timeSection, countSection, optionsSection, statusLabel, startButton);
         getChildren().addAll(headerBox, card);
     }
 }

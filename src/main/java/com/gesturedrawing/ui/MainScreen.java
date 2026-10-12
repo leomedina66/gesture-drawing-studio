@@ -16,8 +16,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 /**
- * Initial setup view where user selects image source (Whole Directory or Specific Files),
- * session timer, image count, Always-on-Top, and visual filter options.
+ * Initial setup menu screen. Designed with comfortable fixed layout (600x760) without scrollbars.
  */
 public class MainScreen extends VBox {
     private File selectedFolder;
@@ -29,9 +28,10 @@ public class MainScreen extends VBox {
     private final Label statusLabel = new Label();
 
     public MainScreen(Stage stage, Consumer<SessionConfig> onStartSession) {
-        setSpacing(24);
+        setSpacing(16);
         setAlignment(Pos.CENTER);
-        setPadding(new Insets(40));
+        setPadding(new Insets(20, 24, 20, 24));
+        setStyle("-fx-background-color: #0F1117;");
 
         // Restore saved folder preference
         File lastFolder = preferencesService.getLastFolder();
@@ -47,7 +47,7 @@ public class MainScreen extends VBox {
         countSpinner.getValueFactory().setValue(lastCount);
 
         // Header Section
-        VBox headerBox = new VBox(8);
+        VBox headerBox = new VBox(4);
         headerBox.setAlignment(Pos.CENTER);
         Text title = new Text("Gesture Drawing Studio");
         title.getStyleClass().add("header-title");
@@ -57,19 +57,19 @@ public class MainScreen extends VBox {
         headerBox.getChildren().addAll(title, subtitle);
 
         // Configuration Card Panel
-        VBox card = new VBox(16);
+        VBox card = new VBox(12);
         card.setMaxWidth(540);
         card.getStyleClass().add("card-panel");
 
         // Image Selection Source Section (Folder OR Files)
-        VBox sourceSection = new VBox(8);
+        VBox sourceSection = new VBox(6);
         Label sourceLabel = new Label("Reference Image Source");
         sourceLabel.getStyleClass().add("label-text");
 
         selectionPathField.setPromptText("No folder or files selected...");
         selectionPathField.setEditable(false);
 
-        HBox btnBox = new HBox(10);
+        HBox btnBox = new HBox(8);
         btnBox.setAlignment(Pos.CENTER_LEFT);
 
         Button browseFolderBtn = new Button("Select Folder 📁");
@@ -117,17 +117,17 @@ public class MainScreen extends VBox {
         sourceSection.getChildren().addAll(sourceLabel, selectionPathField, btnBox);
 
         // Timer Duration Section
-        VBox timeSection = new VBox(10);
+        VBox timeSection = new VBox(6);
         Label timeLabel = new Label("Time per Pose (Seconds)");
         timeLabel.getStyleClass().add("label-text");
         timeSpinner.setEditable(true);
 
         // Quick Preset Buttons
-        HBox presetBox = new HBox(8);
+        HBox presetBox = new HBox(6);
         presetBox.setAlignment(Pos.CENTER_LEFT);
 
         int[] presets = {30, 60, 120, 300};
-        String[] presetLabels = {"30s", "1 min", "2 min", "5 min"};
+        String[] presetLabels = {"30s", "1m", "2m", "5m"};
 
         for (int i = 0; i < presets.length; i++) {
             final int sec = presets[i];
@@ -140,14 +140,14 @@ public class MainScreen extends VBox {
         timeSection.getChildren().addAll(timeLabel, timeSpinner, presetBox);
 
         // Total Images Count Section
-        VBox countSection = new VBox(8);
+        VBox countSection = new VBox(6);
         Label countLabel = new Label("Total Poses in Session");
         countLabel.getStyleClass().add("label-text");
         countSpinner.setEditable(true);
         countSection.getChildren().addAll(countLabel, countSpinner);
 
         // Visual Filters & Display Options Section
-        VBox optionsSection = new VBox(10);
+        VBox optionsSection = new VBox(6);
         Label optionsLabel = new Label("Session Display Options");
         optionsLabel.getStyleClass().add("label-text");
 

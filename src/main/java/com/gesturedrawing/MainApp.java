@@ -19,8 +19,13 @@ import java.util.List;
 
 /**
  * Entry point launcher for Gesture Drawing Studio Desktop Application.
+ * Features standardized fixed non-resizable menu screens (MainScreen & SummaryScreen at 600x760)
+ * and fully resizable drawing session viewer (SessionScreen).
  */
 public class MainApp extends Application {
+    private static final double MENU_WIDTH = 600;
+    private static final double MENU_HEIGHT = 760;
+
     private Stage primaryStage;
     private Scene scene;
     private SessionScreen activeSessionScreen;
@@ -31,8 +36,6 @@ public class MainApp extends Application {
     public void start(Stage primaryStage) {
         this.primaryStage = primaryStage;
         primaryStage.setTitle("Gesture Drawing Studio");
-        primaryStage.setMinWidth(800);
-        primaryStage.setMinHeight(600);
 
         // Load custom application window and taskbar icon
         try {
@@ -42,18 +45,18 @@ public class MainApp extends Application {
             System.err.println("Could not load app icon: " + ex.getMessage());
         }
 
-        // Restore saved window dimensions, screen location, maximized state, and always-on-top preference
-        double w = preferencesService.getWindowWidth(960);
-        double h = preferencesService.getWindowHeight(680);
+        // Restore saved position and always-on-top preference
         double x = preferencesService.getWindowX(-1);
         double y = preferencesService.getWindowY(-1);
-        boolean isMaximized = preferencesService.isWindowMaximized(false);
         boolean alwaysOnTop = preferencesService.isAlwaysOnTop(false);
 
         primaryStage.setAlwaysOnTop(alwaysOnTop);
 
+        // Main Menu is non-resizable with standardized fixed dimensions (600x760)
+        primaryStage.setResizable(false);
+
         MainScreen mainScreen = new MainScreen(primaryStage, this::startSession);
-        scene = new Scene(mainScreen, w, h);
+        scene = new Scene(mainScreen, MENU_WIDTH, MENU_HEIGHT);
         applyStylesheet(scene);
 
         primaryStage.setScene(scene);
@@ -61,9 +64,6 @@ public class MainApp extends Application {
         if (x >= 0 && y >= 0) {
             primaryStage.setX(x);
             primaryStage.setY(y);
-        }
-        if (isMaximized) {
-            primaryStage.setMaximized(true);
         }
 
         // Save window position and size on exit and cleanup session if active
@@ -76,7 +76,17 @@ public class MainApp extends Application {
     }
 
     private void showMainScreen() {
+        if (activeSessionScreen != null) {
+            saveCurrentWindowBounds();
+        }
         cleanupActiveSession();
+
+        // Lock resizability and set standardized fixed menu dimensions
+        primaryStage.setMaximized(false);
+        primaryStage.setResizable(false);
+        primaryStage.setWidth(MENU_WIDTH);
+        primaryStage.setHeight(MENU_HEIGHT);
+
         MainScreen mainScreen = new MainScreen(primaryStage, this::startSession);
         switchRoot(mainScreen);
     }
@@ -94,6 +104,21 @@ public class MainApp extends Application {
             return;
         }
 
+        // Enable full resizability for Session Viewer and restore saved session dimensions
+        primaryStage.setResizable(true);
+        primaryStage.setMinWidth(320);
+        primaryStage.setMinHeight(240);
+
+        double w = preferencesService.getWindowWidth(960);
+        double h = preferencesService.getWindowHeight(680);
+        boolean isMaximized = preferencesService.isWindowMaximized(false);
+
+        primaryStage.setWidth(w);
+        primaryStage.setHeight(h);
+        if (isMaximized) {
+            primaryStage.setMaximized(true);
+        }
+
         SessionManager sessionManager = new SessionManager(config, images);
         activeSessionScreen = new SessionScreen(primaryStage, config, sessionManager, this::showSummaryScreen);
 
@@ -102,7 +127,17 @@ public class MainApp extends Application {
     }
 
     private void showSummaryScreen(SessionResult result) {
+        if (activeSessionScreen != null) {
+            saveCurrentWindowBounds();
+        }
         cleanupActiveSession();
+
+        // Lock resizability and set standardized fixed menu dimensions (600x760)
+        primaryStage.setMaximized(false);
+        primaryStage.setResizable(false);
+        primaryStage.setWidth(MENU_WIDTH);
+        primaryStage.setHeight(MENU_HEIGHT);
+
         SummaryScreen summaryScreen = new SummaryScreen(result, this::showMainScreen);
         switchRoot(summaryScreen);
     }
@@ -115,7 +150,7 @@ public class MainApp extends Application {
     }
 
     /**
-     * Seamless root switching that preserves exact window size, position, and maximized state.
+     * Seamless root switching that preserves current scene configuration.
      */
     private void switchRoot(Parent newRoot) {
         if (scene != null) {
@@ -124,7 +159,7 @@ public class MainApp extends Application {
     }
 
     private void saveCurrentWindowBounds() {
-        if (primaryStage != null) {
+        if (primaryStage != null && primaryStage.isResizable()) {
             preferencesService.saveWindowBounds(
                     primaryStage.getWidth(),
                     primaryStage.getHeight(),

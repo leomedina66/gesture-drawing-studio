@@ -16,16 +16,18 @@ import java.util.List;
 
 /**
  * End-of-session screen showing overall stats and a thumbnail gallery of poses practiced.
+ * Fits the exact same standardized menu dimensions (600x760) without window scrollbars.
  */
 public class SummaryScreen extends VBox {
 
     public SummaryScreen(SessionResult result, Runnable onNewSession) {
-        setSpacing(24);
-        setAlignment(Pos.TOP_CENTER);
-        setPadding(new Insets(32));
+        setSpacing(16);
+        setAlignment(Pos.CENTER);
+        setPadding(new Insets(20, 24, 20, 24));
+        setStyle("-fx-background-color: #0F1117;");
 
         // Header Section
-        VBox headerBox = new VBox(8);
+        VBox headerBox = new VBox(4);
         headerBox.setAlignment(Pos.CENTER);
 
         Text title = new Text("Session Complete! 🎉");
@@ -36,8 +38,13 @@ public class SummaryScreen extends VBox {
 
         headerBox.getChildren().addAll(title, subtitle);
 
+        // Configuration Card Panel container matching MainScreen style
+        VBox card = new VBox(16);
+        card.setMaxWidth(540);
+        card.getStyleClass().add("card-panel");
+
         // Stats Cards Bar
-        HBox statsBar = new HBox(20);
+        HBox statsBar = new HBox(12);
         statsBar.setAlignment(Pos.CENTER);
 
         VBox timeCard = createStatCard("TOTAL PRACTICE TIME", result.getFormattedTotalTime());
@@ -46,17 +53,16 @@ public class SummaryScreen extends VBox {
         statsBar.getChildren().addAll(timeCard, countCard);
 
         // Thumbnail Gallery Section
-        VBox gallerySection = new VBox(12);
+        VBox gallerySection = new VBox(8);
         gallerySection.setAlignment(Pos.CENTER_LEFT);
-        gallerySection.setMaxWidth(720);
 
         Label galleryTitle = new Label("Session Poses Gallery");
         galleryTitle.getStyleClass().add("label-text");
 
         FlowPane thumbnailGrid = new FlowPane();
-        thumbnailGrid.setHgap(12);
-        thumbnailGrid.setVgap(12);
-        thumbnailGrid.setPadding(new Insets(12));
+        thumbnailGrid.setHgap(10);
+        thumbnailGrid.setVgap(10);
+        thumbnailGrid.setPadding(new Insets(10));
         thumbnailGrid.setStyle("-fx-background-color: #161821; -fx-background-radius: 8px;");
 
         List<GestureImage> images = result.getImagesUsed();
@@ -71,7 +77,7 @@ public class SummaryScreen extends VBox {
 
                 ImageView thumbView = new ImageView();
                 try {
-                    Image img = new Image(gestureImg.getFileUri(), 140, 140, true, true, true);
+                    Image img = new Image(gestureImg.getFileUri(), 110, 110, true, true, true);
                     thumbView.setImage(img);
                 } catch (Exception ex) {
                     System.err.println("Error rendering thumbnail: " + gestureImg.getFileName());
@@ -82,34 +88,35 @@ public class SummaryScreen extends VBox {
             }
         }
 
-        ScrollPane scrollPane = new ScrollPane(thumbnailGrid);
-        scrollPane.setFitToWidth(true);
-        scrollPane.setMaxHeight(320);
-        scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
+        ScrollPane galleryScroll = new ScrollPane(thumbnailGrid);
+        galleryScroll.setFitToWidth(true);
+        galleryScroll.setMaxHeight(260);
+        galleryScroll.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
 
-        gallerySection.getChildren().addAll(galleryTitle, scrollPane);
+        gallerySection.getChildren().addAll(galleryTitle, galleryScroll);
 
         // Action Buttons
         Button newSessionBtn = new Button("Start New Session 🔄");
         newSessionBtn.getStyleClass().add("button-primary");
-        newSessionBtn.setPrefWidth(240);
+        newSessionBtn.setMaxWidth(Double.MAX_VALUE);
         newSessionBtn.setOnAction(e -> onNewSession.run());
 
-        getChildren().addAll(headerBox, statsBar, gallerySection, newSessionBtn);
+        card.getChildren().addAll(statsBar, gallerySection, newSessionBtn);
+        getChildren().addAll(headerBox, card);
     }
 
     private VBox createStatCard(String labelText, String valueText) {
-        VBox card = new VBox(6);
+        VBox card = new VBox(4);
         card.setAlignment(Pos.CENTER);
-        card.setPadding(new Insets(16, 28, 16, 28));
+        card.setPadding(new Insets(12, 18, 12, 18));
         card.getStyleClass().add("card-panel");
-        card.setPrefWidth(220);
+        card.setPrefWidth(210);
 
         Label label = new Label(labelText);
         label.setStyle("-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #9CA3AF;");
 
         Label value = new Label(valueText);
-        value.setStyle("-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #10B981;");
+        value.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #10B981;");
 
         card.getChildren().addAll(label, value);
         return card;

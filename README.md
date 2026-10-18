@@ -52,6 +52,13 @@ Right-click the image for the same display toggles. Holding a toggle key switche
 
 Download the latest build from the [Releases](https://github.com/leomedina66/gesture-drawing-studio/releases) page, extract it, and run `Gesture Drawing Studio.exe`. No Java installation is needed.
 
+> **"Windows protected your PC" warning**
+> The app is not code-signed yet, so Microsoft Defender SmartScreen may block it the first time you run it. This warning appears for unsigned apps downloaded from the internet; it does not mean a threat was detected. To open the app, either:
+> - click **More info** → **Run anyway** (pt-BR: *Mais informações* → *Executar assim mesmo*), or
+> - before extracting, right-click the `.zip` → **Properties** → check **Unblock** → **OK** (pt-BR: *Propriedades* → *Desbloquear*).
+>
+> You can compare the file against the SHA-256 checksum listed in the release notes.
+
 ### Build from source
 
 **Requirements:** JDK 21 or newer and Apache Maven 3.8+ on `PATH`.

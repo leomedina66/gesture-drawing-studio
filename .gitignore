@@ -21,3 +21,6 @@ desktop.ini
 
 # Native app image produced by build-installer.bat
 dist/
+
+# Release archives produced for GitHub Releases
+release/

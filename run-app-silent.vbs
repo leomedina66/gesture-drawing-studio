@@ -2,4 +2,4 @@
 Set fso = CreateObject("Scripting.FileSystemObject")
 Set WshShell = CreateObject("WScript.Shell")
 appDir = fso.GetParentFolderName(WScript.ScriptFullName)
-WshShell.Run "javaw -jar """ & appDir & "\target\gesture-drawing-app-1.0.0-SNAPSHOT.jar""", 0, False
+WshShell.Run "javaw -jar """ & appDir & "\target\gesture-drawing-studio.jar""", 0, False

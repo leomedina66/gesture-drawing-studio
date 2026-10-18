@@ -4,7 +4,7 @@ cd /d "%~dp0"
 echo Building Gesture Drawing Studio Native Bundle...
 
 set "APP_NAME=Gesture Drawing Studio"
-set "APP_VERSION=1.0.0"
+set "APP_VERSION=1.1.0"
 REM Modules the app needs (from: jdeps --ignore-missing-deps --multi-release 21 --print-module-deps <jar>)
 set "APP_MODULES=java.base,java.desktop,java.prefs,jdk.jfr,jdk.unsupported"
 
@@ -22,7 +22,7 @@ REM 2. Stage the jar
 if exist "target\installer-input" rmdir /s /q "target\installer-input"
 if exist "target\jpackage-out" rmdir /s /q "target\jpackage-out"
 mkdir "target\installer-input"
-copy /y "target\gesture-drawing-app-1.0.0-SNAPSHOT.jar" "target\installer-input\gesture-drawing-studio.jar" >nul
+copy /y "target\gesture-drawing-studio.jar" "target\installer-input\gesture-drawing-studio.jar" >nul
 
 REM 3. Package a native Windows app with a trimmed embedded runtime (into target first)
 "%JPACKAGE%" --type app-image ^

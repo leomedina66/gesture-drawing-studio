@@ -1,89 +1,90 @@
 package com.gesturedrawing.domain;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
  * Domain model representing configuration settings for a gesture drawing session.
  * Supports loading reference artwork from either a whole Directory or a List of specific Files.
+ * Exactly one of {@link #getImageDirectory()} / {@link #getSelectedFiles()} is the source.
+ * The session is a sequence of {@link SessionPhase phases}; a simple session has one phase.
  */
-public class SessionConfig {
-    private File imageDirectory;
-    private List<File> selectedFiles;
-    private int secondsPerImage;
-    private int totalImages;
-    private boolean defaultFlipped;
-    private boolean defaultGrayscale;
+public final class SessionConfig {
+    private final File imageDirectory;
+    private final List<File> selectedFiles;
+    private final List<SessionPhase> phases;
+    private final boolean defaultFlipped;
+    private final boolean defaultGrayscale;
 
     public SessionConfig(File imageDirectory, int secondsPerImage, int totalImages) {
         this(imageDirectory, secondsPerImage, totalImages, false, false);
     }
 
     public SessionConfig(File imageDirectory, int secondsPerImage, int totalImages, boolean defaultFlipped, boolean defaultGrayscale) {
-        if (imageDirectory == null || !imageDirectory.exists() || !imageDirectory.isDirectory()) {
-            throw new IllegalArgumentException("Invalid directory path provided.");
-        }
-        validateNumbers(secondsPerImage, totalImages);
-        this.imageDirectory = imageDirectory;
-        this.selectedFiles = scanDirectory(imageDirectory);
-        this.secondsPerImage = secondsPerImage;
-        this.totalImages = totalImages;
-        this.defaultFlipped = defaultFlipped;
-        this.defaultGrayscale = defaultGrayscale;
+        this(imageDirectory, List.of(new SessionPhase(totalImages, secondsPerImage)), defaultFlipped, defaultGrayscale);
     }
 
     public SessionConfig(List<File> selectedFiles, int secondsPerImage, int totalImages, boolean defaultFlipped, boolean defaultGrayscale) {
-        if (selectedFiles == null || selectedFiles.isEmpty()) {
-            throw new IllegalArgumentException("No image files selected.");
+        this(selectedFiles, List.of(new SessionPhase(totalImages, secondsPerImage)), defaultFlipped, defaultGrayscale);
+    }
+
+    public SessionConfig(File imageDirectory, List<SessionPhase> phases, boolean defaultFlipped, boolean defaultGrayscale) {
+        if (imageDirectory == null || !imageDirectory.isDirectory()) {
+            throw new IllegalArgumentException("Invalid directory path provided.");
         }
-        validateNumbers(secondsPerImage, totalImages);
-        this.imageDirectory = null;
-        this.selectedFiles = new ArrayList<>(selectedFiles);
-        this.secondsPerImage = secondsPerImage;
-        this.totalImages = totalImages;
+        this.imageDirectory = imageDirectory;
+        this.selectedFiles = List.of();
+        this.phases = validatePhases(phases);
         this.defaultFlipped = defaultFlipped;
         this.defaultGrayscale = defaultGrayscale;
     }
 
-    private void validateNumbers(int secondsPerImage, int totalImages) {
-        if (secondsPerImage <= 0) {
-            throw new IllegalArgumentException("Duration per image must be greater than 0 seconds.");
+    public SessionConfig(List<File> selectedFiles, List<SessionPhase> phases, boolean defaultFlipped, boolean defaultGrayscale) {
+        if (selectedFiles == null || selectedFiles.isEmpty()) {
+            throw new IllegalArgumentException("No image files selected.");
         }
-        if (totalImages <= 0) {
-            throw new IllegalArgumentException("Total image count must be greater than 0.");
-        }
+        this.imageDirectory = null;
+        this.selectedFiles = List.copyOf(selectedFiles);
+        this.phases = validatePhases(phases);
+        this.defaultFlipped = defaultFlipped;
+        this.defaultGrayscale = defaultGrayscale;
     }
 
-    private List<File> scanDirectory(File dir) {
-        File[] files = dir.listFiles();
-        if (files == null) {
-            return Collections.emptyList();
+    private static List<SessionPhase> validatePhases(List<SessionPhase> phases) {
+        if (phases == null || phases.isEmpty()) {
+            throw new IllegalArgumentException("A session needs at least one phase.");
         }
-        List<File> list = new ArrayList<>();
-        for (File f : files) {
-            if (f.isFile()) {
-                list.add(f);
-            }
+        List<SessionPhase> copy = List.copyOf(phases);
+        // long sum: a long list of phases can't overflow into a "valid" negative total
+        if (copy.stream().mapToLong(SessionPhase::poseCount).sum() > SessionPhase.MAX_POSES) {
+            throw new IllegalArgumentException("A session can have at most " + SessionPhase.MAX_POSES + " poses.");
         }
-        return list;
+        return copy;
     }
 
+    /** Source folder, or {@code null} when the session uses an explicit file selection. */
     public File getImageDirectory() {
         return imageDirectory;
     }
 
+    /** Explicitly selected files (immutable); empty when the session uses a folder. */
     public List<File> getSelectedFiles() {
         return selectedFiles;
     }
 
-    public int getSecondsPerImage() {
-        return secondsPerImage;
+    /** Session phases in play order (immutable, never empty). */
+    public List<SessionPhase> getPhases() {
+        return phases;
     }
 
+    /** Total poses across all phases. */
     public int getTotalImages() {
-        return totalImages;
+        return phases.stream().mapToInt(SessionPhase::poseCount).sum();
+    }
+
+    /** Planned session length if every pose runs its full time. */
+    public int getTotalSeconds() {
+        return phases.stream().mapToInt(SessionPhase::totalSeconds).sum();
     }
 
     public boolean isDefaultFlipped() {
@@ -98,8 +99,7 @@ public class SessionConfig {
     public String toString() {
         return "SessionConfig{" +
                 "directory=" + (imageDirectory != null ? imageDirectory.getAbsolutePath() : "Custom File Selection (" + selectedFiles.size() + " files)") +
-                ", secondsPerImage=" + secondsPerImage +
-                ", totalImages=" + totalImages +
+                ", phases=" + phases +
                 ", defaultFlipped=" + defaultFlipped +
                 ", defaultGrayscale=" + defaultGrayscale +
                 '}';

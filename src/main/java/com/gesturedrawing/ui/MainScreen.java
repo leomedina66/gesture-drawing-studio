@@ -1,6 +1,8 @@
 package com.gesturedrawing.ui;
 
 import com.gesturedrawing.domain.SessionConfig;
+import com.gesturedrawing.domain.SessionPhase;
+import com.gesturedrawing.service.ImageLoaderService;
 import com.gesturedrawing.service.PreferencesService;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -21,17 +23,19 @@ import java.util.function.Consumer;
 public class MainScreen extends VBox {
     private File selectedFolder;
     private List<File> selectedFiles;
-    private final PreferencesService preferencesService = new PreferencesService();
+    private final PreferencesService preferencesService;
     private final TextField selectionPathField = new TextField();
     private final Spinner<Integer> timeSpinner = new Spinner<>(5, 3600, 60, 5);
     private final Spinner<Integer> countSpinner = new Spinner<>(1, 500, 10, 1);
     private final Label statusLabel = new Label();
+    private final PhaseEditor phaseEditor;
 
-    public MainScreen(Stage stage, Consumer<SessionConfig> onStartSession) {
+    public MainScreen(Stage stage, PreferencesService preferencesService, Consumer<SessionConfig> onStartSession) {
+        this.preferencesService = preferencesService;
         setSpacing(16);
         setAlignment(Pos.CENTER);
         setPadding(new Insets(20, 24, 20, 24));
-        setStyle("-fx-background-color: #0F1117;");
+        getStyleClass().add("screen-root");
 
         // Restore saved folder preference
         File lastFolder = preferencesService.getLastFolder();
@@ -40,11 +44,8 @@ public class MainScreen extends VBox {
             selectionPathField.setText("Folder: " + lastFolder.getAbsolutePath());
         }
 
-        int lastTime = preferencesService.getLastSecondsPerImage(60);
-        timeSpinner.getValueFactory().setValue(lastTime);
-
-        int lastCount = preferencesService.getLastTotalImages(10);
-        countSpinner.getValueFactory().setValue(lastCount);
+        timeSpinner.getValueFactory().setValue(preferencesService.getLastSecondsPerImage(60));
+        countSpinner.getValueFactory().setValue(preferencesService.getLastTotalImages(10));
 
         // Header Section
         VBox headerBox = new VBox(4);
@@ -77,7 +78,7 @@ public class MainScreen extends VBox {
         browseFolderBtn.setOnAction(e -> {
             DirectoryChooser chooser = new DirectoryChooser();
             chooser.setTitle("Select Reference Images Folder");
-            if (selectedFolder != null && selectedFolder.exists()) {
+            if (selectedFolder != null && selectedFolder.isDirectory()) {
                 chooser.setInitialDirectory(selectedFolder);
             }
             File folder = chooser.showDialog(stage);
@@ -90,15 +91,14 @@ public class MainScreen extends VBox {
             }
         });
 
-        Button browseFilesBtn = new Button("Select Files 🖼️");
+        Button browseFilesBtn = new Button("Select Files 🖼");
         browseFilesBtn.getStyleClass().add("button-secondary");
         browseFilesBtn.setOnAction(e -> {
             FileChooser chooser = new FileChooser();
             chooser.setTitle("Select Specific Reference Images");
-            chooser.getExtensionFilters().add(
-                    new FileChooser.ExtensionFilter("Image Files", "*.jpg", "*.jpeg", "*.png", "*.webp", "*.gif", "*.bmp")
-            );
-            if (selectedFolder != null && selectedFolder.exists()) {
+            chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Image Files",
+                    ImageLoaderService.SUPPORTED_EXTENSIONS.stream().map(ext -> "*." + ext).toList()));
+            if (selectedFolder != null && selectedFolder.isDirectory()) {
                 chooser.setInitialDirectory(selectedFolder);
             }
             List<File> files = chooser.showOpenMultipleDialog(stage);
@@ -107,9 +107,7 @@ public class MainScreen extends VBox {
                 selectedFolder = files.get(0).getParentFile();
                 selectionPathField.setText(files.size() + " files selected (" + files.get(0).getName() + "...)");
                 statusLabel.setText("");
-                if (selectedFolder != null) {
-                    preferencesService.saveLastFolder(selectedFolder);
-                }
+                preferencesService.saveLastFolder(selectedFolder);
             }
         });
 
@@ -120,7 +118,7 @@ public class MainScreen extends VBox {
         VBox timeSection = new VBox(6);
         Label timeLabel = new Label("Time per Pose (Seconds)");
         timeLabel.getStyleClass().add("label-text");
-        timeSpinner.setEditable(true);
+        Spinners.makeEditable(timeSpinner);
 
         // Quick Preset Buttons
         HBox presetBox = new HBox(6);
@@ -143,78 +141,112 @@ public class MainScreen extends VBox {
         VBox countSection = new VBox(6);
         Label countLabel = new Label("Total Poses in Session");
         countLabel.getStyleClass().add("label-text");
-        countSpinner.setEditable(true);
+        Spinners.makeEditable(countSpinner);
         countSection.getChildren().addAll(countLabel, countSpinner);
+
+        // Session Type: Simple (one duration for every pose) or Phases (e.g. 2 × 1 min, 5 × 2 min, 1 × 10 min)
+        VBox modeSection = new VBox(6);
+        Label modeLabel = new Label("Session Type");
+        modeLabel.getStyleClass().add("label-text");
+
+        ToggleGroup modeGroup = new ToggleGroup();
+        ToggleButton simpleToggle = new ToggleButton("Simple");
+        ToggleButton phasesToggle = new ToggleButton("Phases");
+        for (ToggleButton toggle : List.of(simpleToggle, phasesToggle)) {
+            toggle.setToggleGroup(modeGroup);
+            toggle.getStyleClass().add("segment-button");
+        }
+        // JavaFX CSS has no :first-child/:last-child, so the rounded ends get their own classes
+        simpleToggle.getStyleClass().add("segment-left");
+        phasesToggle.getStyleClass().add("segment-right");
+        HBox modeBox = new HBox(0, simpleToggle, phasesToggle);
+        modeSection.getChildren().addAll(modeLabel, modeBox);
+
+        VBox simplePane = new VBox(12, timeSection, countSection);
+        phaseEditor = new PhaseEditor(preferencesService.getPhases(PhaseEditor.DEFAULT_PLAN));
+        Label phasesLabel = new Label("Session Phases (played in order)");
+        phasesLabel.getStyleClass().add("label-text");
+        VBox phasesPane = new VBox(6, phasesLabel, phaseEditor);
+
+        // Only the active mode's pane takes up space in the fixed-size card
+        phasesPane.visibleProperty().bind(phasesToggle.selectedProperty());
+        phasesPane.managedProperty().bind(phasesToggle.selectedProperty());
+        simplePane.visibleProperty().bind(phasesToggle.selectedProperty().not());
+        simplePane.managedProperty().bind(phasesToggle.selectedProperty().not());
+
+        modeGroup.selectedToggleProperty().addListener((obs, oldToggle, newToggle) -> {
+            if (newToggle == null) {
+                oldToggle.setSelected(true); // a segmented control always keeps one option on
+            } else {
+                preferencesService.savePhasedMode(newToggle == phasesToggle);
+            }
+        });
+        (preferencesService.isPhasedMode(false) ? phasesToggle : simpleToggle).setSelected(true);
 
         // Visual Filters & Display Options Section
         VBox optionsSection = new VBox(6);
         Label optionsLabel = new Label("Session Display Options");
         optionsLabel.getStyleClass().add("label-text");
 
-        CheckBox alwaysOnTopCheckBox = new CheckBox("Always on Top (Keep window above other apps)");
-        alwaysOnTopCheckBox.setStyle("-fx-text-fill: #D1D5DB; -fx-font-weight: 600; -fx-font-size: 13px; -fx-cursor: hand;");
-        boolean initialAlwaysOnTop = preferencesService.isAlwaysOnTop(false);
-        alwaysOnTopCheckBox.setSelected(initialAlwaysOnTop);
-        stage.setAlwaysOnTop(initialAlwaysOnTop);
-
+        CheckBox alwaysOnTopCheckBox = createOption("Always on Top (Keep window above other apps)", stage.isAlwaysOnTop());
         alwaysOnTopCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> {
             stage.setAlwaysOnTop(newVal);
             preferencesService.saveAlwaysOnTop(newVal);
         });
 
-        CheckBox flipCheckBox = new CheckBox("Flip Horizontal by default (H)");
-        flipCheckBox.setStyle("-fx-text-fill: #D1D5DB; -fx-font-weight: 600; -fx-font-size: 13px; -fx-cursor: hand;");
-        boolean initialFlipped = preferencesService.isDefaultFlipped(false);
-        flipCheckBox.setSelected(initialFlipped);
+        CheckBox flipCheckBox = createOption("Flip Horizontal by default (H)", preferencesService.isDefaultFlipped(false));
         flipCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> preferencesService.saveDefaultFlipped(newVal));
 
-        CheckBox grayscaleCheckBox = new CheckBox("Grayscale / Black & White by default (G)");
-        grayscaleCheckBox.setStyle("-fx-text-fill: #D1D5DB; -fx-font-weight: 600; -fx-font-size: 13px; -fx-cursor: hand;");
-        boolean initialGrayscale = preferencesService.isDefaultGrayscale(false);
-        grayscaleCheckBox.setSelected(initialGrayscale);
+        CheckBox grayscaleCheckBox = createOption("Grayscale / Black & White by default (G)", preferencesService.isDefaultGrayscale(false));
         grayscaleCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> preferencesService.saveDefaultGrayscale(newVal));
 
         optionsSection.getChildren().addAll(optionsLabel, alwaysOnTopCheckBox, flipCheckBox, grayscaleCheckBox);
 
         // Status Message Label
-        statusLabel.setStyle("-fx-text-fill: #EF4444; -fx-font-weight: bold;");
+        statusLabel.getStyleClass().add("status-error");
 
         // Start Button
         Button startButton = new Button("Start Session 🚀");
         startButton.setMaxWidth(Double.MAX_VALUE);
         startButton.getStyleClass().add("button-primary");
+        startButton.setDefaultButton(true);
         startButton.setOnAction(e -> {
             if (selectedFiles == null && selectedFolder == null) {
                 statusLabel.setText("Please select a folder or image files first.");
                 return;
             }
+            List<SessionPhase> phases;
+            if (phasesToggle.isSelected()) {
+                phaseEditor.commitEdits();
+                phases = phaseEditor.getPhases();
+            } else {
+                Spinners.commit(timeSpinner);
+                Spinners.commit(countSpinner);
+                phases = List.of(new SessionPhase(countSpinner.getValue(), timeSpinner.getValue()));
+            }
             try {
-                preferencesService.saveLastSessionSettings(timeSpinner.getValue(), countSpinner.getValue());
-                SessionConfig config;
-                if (selectedFiles != null && !selectedFiles.isEmpty()) {
-                    config = new SessionConfig(
-                            selectedFiles,
-                            timeSpinner.getValue(),
-                            countSpinner.getValue(),
-                            flipCheckBox.isSelected(),
-                            grayscaleCheckBox.isSelected()
-                    );
+                SessionConfig config = selectedFiles != null && !selectedFiles.isEmpty()
+                        ? new SessionConfig(selectedFiles, phases, flipCheckBox.isSelected(), grayscaleCheckBox.isSelected())
+                        : new SessionConfig(selectedFolder, phases, flipCheckBox.isSelected(), grayscaleCheckBox.isSelected());
+                if (phasesToggle.isSelected()) {
+                    preferencesService.savePhases(phases);
                 } else {
-                    config = new SessionConfig(
-                            selectedFolder,
-                            timeSpinner.getValue(),
-                            countSpinner.getValue(),
-                            flipCheckBox.isSelected(),
-                            grayscaleCheckBox.isSelected()
-                    );
+                    preferencesService.saveLastSessionSettings(timeSpinner.getValue(), countSpinner.getValue());
                 }
                 onStartSession.accept(config);
-            } catch (Exception ex) {
+            } catch (IllegalArgumentException ex) {
                 statusLabel.setText(ex.getMessage());
             }
         });
 
-        card.getChildren().addAll(sourceSection, timeSection, countSection, optionsSection, statusLabel, startButton);
+        card.getChildren().addAll(sourceSection, modeSection, simplePane, phasesPane, optionsSection, statusLabel, startButton);
         getChildren().addAll(headerBox, card);
+    }
+
+    private static CheckBox createOption(String text, boolean selected) {
+        CheckBox checkBox = new CheckBox(text);
+        checkBox.getStyleClass().add("option-checkbox");
+        checkBox.setSelected(selected);
+        return checkBox;
     }
 }

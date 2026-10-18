@@ -8,6 +8,10 @@
 }
 
 /* Containers & Cards */
+.screen-root {
+    -fx-background-color: #0F1117;
+}
+
 .card-panel {
     -fx-background-color: #1E222D;
     -fx-background-radius: 12px;
@@ -75,6 +79,41 @@
     -fx-background-color: #4B5563;
 }
 
+.button-secondary:paused {
+    -fx-background-color: #D97706;
+    -fx-text-fill: #FFFFFF;
+}
+
+.button-danger {
+    -fx-background-color: #DC2626;
+    -fx-text-fill: #FFFFFF;
+    -fx-font-weight: bold;
+    -fx-font-size: 13px;
+    -fx-padding: 8px 16px;
+    -fx-background-radius: 6px;
+    -fx-cursor: hand;
+}
+
+.button-danger:hover {
+    -fx-background-color: #B91C1C;
+}
+
+.option-checkbox {
+    -fx-text-fill: #D1D5DB;
+    -fx-font-weight: 600;
+    -fx-font-size: 13px;
+    -fx-cursor: hand;
+}
+
+.status-error {
+    -fx-text-fill: #EF4444;
+    -fx-font-weight: bold;
+}
+
+.muted-text {
+    -fx-text-fill: #9CA3AF;
+}
+
 .preset-button {
     -fx-background-color: #2D3342;
     -fx-text-fill: #E5E7EB;
@@ -105,6 +144,18 @@
     -fx-font-size: 20px;
     -fx-font-weight: bold;
     -fx-fill: #10B981;
+}
+
+.timer-text:warning {
+    -fx-fill: #F59E0B;
+}
+
+.timer-text:critical {
+    -fx-fill: #EF4444;
+}
+
+.timer-text:paused {
+    -fx-opacity: 0.55;
 }
 
 .counter-text {
@@ -143,4 +194,116 @@
     -fx-padding: 6px;
     -fx-background-radius: 8px;
     -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.3), 8, 0, 0, 4);
+}
+
+.thumbnail-grid {
+    -fx-background-color: #161821;
+    -fx-background-radius: 8px;
+}
+
+.gallery-scroll {
+    -fx-background: transparent;
+    -fx-background-color: transparent;
+}
+
+.stat-label {
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #9CA3AF;
+}
+
+.stat-value {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #10B981;
+}
+
+/* Session type segmented control */
+.segment-button {
+    -fx-background-color: #2D3342;
+    -fx-text-fill: #D1D5DB;
+    -fx-font-size: 13px;
+    -fx-font-weight: 600;
+    -fx-padding: 6px 18px;
+    -fx-background-radius: 0;
+    -fx-border-color: #4B5563;
+    -fx-cursor: hand;
+}
+
+.segment-left {
+    -fx-background-radius: 8px 0 0 8px;
+    -fx-border-radius: 8px 0 0 8px;
+}
+
+.segment-right {
+    -fx-background-radius: 0 8px 8px 0;
+    -fx-border-radius: 0 8px 8px 0;
+}
+
+.segment-button:selected {
+    -fx-background-color: #6366F1;
+    -fx-text-fill: #FFFFFF;
+    -fx-border-color: #6366F1;
+}
+
+/* Phase editor */
+.phase-row {
+    -fx-background-color: #161821;
+    -fx-background-radius: 8px;
+    -fx-padding: 4px 8px;
+}
+
+.phase-title {
+    -fx-text-fill: #A5B4FC;
+    -fx-font-weight: bold;
+    -fx-font-size: 13px;
+}
+
+.phase-row .spinner {
+    -fx-padding: 0;
+    -fx-font-size: 13px;
+}
+
+.phase-row .spinner .text-field {
+    -fx-padding: 3px 8px;
+    -fx-border-width: 0;
+    -fx-background-color: transparent;
+    -fx-font-size: 13px;
+}
+
+.phase-row .combo-box {
+    -fx-font-size: 13px;
+}
+
+.phase-row .combo-box .list-cell {
+    -fx-padding: 3px 8px;
+}
+
+.combo-box {
+    -fx-background-color: #2D3342;
+    -fx-background-radius: 8px;
+    -fx-border-color: #374151;
+    -fx-border-radius: 8px;
+}
+
+.combo-box .list-cell {
+    -fx-text-fill: #FFFFFF;
+}
+
+.icon-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #9CA3AF;
+    -fx-font-size: 13px;
+    -fx-padding: 2px 8px;
+    -fx-cursor: hand;
+}
+
+.icon-button:hover {
+    -fx-text-fill: #EF4444;
+}
+
+.phase-badge {
+    -fx-font-size: 13px;
+    -fx-font-weight: 600;
+    -fx-fill: #A5B4FC;
 }

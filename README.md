@@ -1,128 +1,130 @@
-# 🎨 Gesture Drawing Studio
+# Gesture Drawing Studio
 
-A modern, high-performance desktop application designed for artists to practice gesture drawing and figure studies with timed reference image sessions, non-repeating pose shuffling, and memory-optimized image pipelines.
+A desktop app for timed gesture and figure drawing practice. Point it at a folder of reference images, choose how long each pose lasts, and it shows the images one at a time with a countdown — as a simple session or as a sequence of phases such as `2 × 1 min → 5 × 2 min → 1 × 10 min`.
 
----
-
-## ✨ Key Features
-
-- 📁 **Local Reference Library**: Load any local directory containing reference images (`.jpg`, `.jpeg`, `.png`, `.webp`, `.gif`).
-- 🎲 **Non-Repeating Random Shuffle**: Automatically shuffles images so no pose repeats within a single session.
-- ⏱️ **Discrete Countdown Timer**: Custom pose duration with one-click presets (`30s`, `1 min`, `2 min`, `5 min`).
-- ⚡ **2-Image Memory Pipeline (Zero-Lag)**: Asynchronously pre-loads upcoming poses in the background for instant transitions without UI stutters or RAM leaks.
-- 🔍 **Crystal-Clear Native Resolution**: Renders full-resolution artwork with high-quality bilinear filtering for High-DPI / 4K displays.
-- 📐 **Responsive Modular Layout**: Controls and timer remain anchored and unobstructed while reference artwork scales dynamically to fit screen dimensions.
-- 💾 **Persistent Settings**: Automatically remembers your last used reference folder, duration, pose count, window dimensions, and screen position across restarts.
-- 🖼️ **Post-Session Gallery**: Displays summary statistics and a thumbnail grid of all poses completed during the session.
+Built with Java 21 and JavaFX 21. Packaged for Windows as a standalone app with its own Java runtime.
 
 ---
 
-## ⌨️ Keyboard Controls
+## Features
+
+**Sessions**
+- **Simple sessions** — one duration for every pose, with presets for 30 s, 1, 2 and 5 minutes.
+- **Phased sessions** — chain up to 10 phases, each with its own pose count and duration. Includes three presets (Warm-up, Classic, Long Study), a live total of poses and time, and a phase indicator next to the timer.
+- **Shuffled, non-repeating poses** — images are shuffled for every session. When the session needs more poses than there are images, they are reused, but the same image is never shown twice in a row.
+- **Pause, previous and next** — going back to a pose from an earlier phase restores that phase's duration.
+- **Session summary** — total practice time, poses completed (a pose counts once you have spent time on it and moved on), and a thumbnail gallery of the images practiced.
+
+**Viewing**
+- **Horizontal flip and grayscale** — toggle during a session or set as defaults.
+- **Always on top** — keep the window above your drawing app.
+- **Sharp at any size** — images are shown at native resolution up to your screen's physical resolution; larger photos are decoded directly at screen size to save memory.
+- **Instant navigation** — the next image is preloaded in the background and the previous one is kept, so Next and Prev don't wait for decoding.
+- **Resilient loading** — unreadable files and images above 100 megapixels are skipped automatically with a short notice instead of stalling the session.
+
+**Convenience**
+- Remembers your last folder, session settings, phase plan, display options, and window size and position.
+- Select a whole folder or a hand-picked set of files.
+
+Supported formats: `.jpg`, `.jpeg`, `.png`, `.gif`, `.bmp`.
+
+---
+
+## Keyboard shortcuts
 
 | Key | Action |
 |---|---|
-| `Space` | Pause / Resume session timer |
-| `Right Arrow` | Skip to next pose |
-| `Left Arrow` | Return to previous pose |
-| `H` | Toggle Horizontal Flip (Espelhar) |
-| `G` | Toggle Grayscale / Black & White (Preto & Branco) |
-| `T` | Toggle Always on Top (Janela no Topo) |
-| `Esc` | Finish session early |
+| `Space` | Pause / resume |
+| `→` | Next pose |
+| `←` | Previous pose |
+| `H` | Flip horizontally |
+| `G` | Grayscale |
+| `T` | Always on top |
+| `Esc` | Finish the session |
+
+Right-click the image for the same display toggles. Holding a toggle key switches it only once.
 
 ---
 
-## 🛠️ Technology Stack & Architecture
+## Getting started
 
-- **Language**: Java 21+
-- **UI Framework**: JavaFX 21 (`javafx-controls`, `javafx-graphics`)
-- **Build System**: Apache Maven (`pom.xml`)
-- **Testing**: JUnit 5 (`junit-jupiter`)
+### Download (Windows)
 
-### Directory Structure
+Download the latest build from the [Releases](https://github.com/leomedina66/gesture-drawing-studio/releases) page, extract it, and run `Gesture Drawing Studio.exe`. No Java installation is needed.
 
-```
-gesture-drawing-app/
-├── pom.xml                                     # Maven dependencies & build settings
-├── README.md                                   # Project documentation
-├── .gitignore                                  # Git exclusion rules
-└── src/
-    ├── main/
-    │   ├── java/
-    │   │   └── com/
-    │   │       └── gesturedrawing/
-    │   │           ├── MainApp.java            # Main JavaFX launcher & scene manager
-    │   │           ├── domain/
-    │   │           │   ├── GestureImage.java   # Image metadata representation
-    │   │           │   ├── SessionConfig.java  # Session configuration domain model
-    │   │           │   └── SessionResult.java # Session summary metrics
-    │   │           ├── service/
-    │   │           │   ├── ImageLoaderService.java   # Directory scanner & shuffle logic
-    │   │           │   ├── ImagePreloaderService.java# 2-Image memory pipeline & preloading
-    │   │           │   ├── PreferencesService.java   # Persistent user preferences
-    │   │           │   └── SessionManager.java       # Session state machine
-    │   │           └── ui/
-    │   │               ├── MainScreen.java     # Session setup & settings view
-    │   │               ├── SessionScreen.java  # Active gesture viewer & controls
-    │   │               └── SummaryScreen.java  # End-of-session gallery & stats
-    │   └── resources/
-    │       └── styles.css                      # Studio dark theme stylesheet
-    └── test/
-        └── java/
-            └── com/
-                └── gesturedrawing/             # Unit tests (SessionConfigTest, ImageLoaderServiceTest)
+### Build from source
+
+**Requirements:** JDK 21 or newer and Apache Maven 3.8+ on `PATH`.
+
+```bash
+git clone https://github.com/leomedina66/gesture-drawing-studio.git
+cd gesture-drawing-studio
+mvn javafx:run
 ```
 
----
+Run the tests:
 
-## 🚀 Download & Running
+```bash
+mvn test
+```
 
-### Option 1: Standalone Windows App (Zero Setup)
-Download the latest pre-packaged **[Gesture-Drawing-Studio-Windows-x64.zip](https://github.com/leomedina66/gesture-drawing-studio/releases)**:
-1. Extract the `.zip` folder.
-2. Double-click **`Gesture Drawing Studio.exe`** to start drawing immediately!
-*(No Java, Maven, or setup required!)*
+### Package the Windows app
 
----
+```cmd
+build-installer.bat
+```
 
-### Option 2: Build & Run from Source
+This runs the tests, builds a self-contained app image with a trimmed Java runtime (about 85 MB in total) and places it in `dist\Gesture Drawing Studio\`. The previous build in `dist\` is only replaced once the new one has been created successfully.
 
-#### Prerequisites
-- **Java JDK 21+**
-- **Apache Maven 3.8+**
+The bundled runtime comes from the JDK that provides `jpackage`. To choose a specific JDK, set `JPACKAGE_JDK` to its folder before running the script.
 
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/leomedina66/gesture-drawing-studio.git
-   cd gesture-drawing-studio
-   ```
+Other launchers:
+- `run-app.bat` — runs the jar with the Java on `PATH` (builds it first if needed).
+- `run-app-silent.vbs` — same, without a console window.
 
-2. **Run via Maven:**
-   ```bash
-   mvn javafx:run
-   ```
-
-3. **Build Standalone Executable Package (`.exe` + JRE):**
-   ```cmd
-   build-installer.bat
-   ```
-
-3. **Run unit tests:**
-   ```bash
-   mvn clean test
-   ```
+> The packaged app and the bundled JavaFX native libraries target Windows. Building on macOS or Linux requires adjusting the JavaFX dependencies and packaging options.
 
 ---
 
-## 🗺️ Roadmap & Future Enhancements
+## Project structure
 
-- [x] **Version 1 (MVP)**: Automated timed sessions, non-repeating shuffle, 2-image memory pipeline, persistent settings, and summary gallery.
-- [ ] **Version 2**: Practice History & Session Logs (saving practice dates, durations, and pose counts locally).
-- [ ] **Version 3**: Custom Warm-up Pipelines (e.g., 10x 30s + 5x 1m + 2x 5m interval sequences).
-- [ ] **Version 4**: Practice Analytics & Graphs (Weekly and monthly practice breakdown).
-- [ ] **Version 5**: Goal & Habit Tracking System (Weekly target minutes and pose quotas).
+```
+src/main/java/com/gesturedrawing/
+├── Launcher.java              Entry point for the packaged jar
+├── MainApp.java               Navigation between screens, window size and position
+├── domain/
+│   ├── GestureImage.java      Image file reference
+│   ├── SessionPhase.java      One phase: pose count × duration (with limits and formatting)
+│   ├── SessionConfig.java     Image source, phase plan and display defaults
+│   └── SessionResult.java     Summary of a finished session
+├── service/
+│   ├── ImageLoaderService.java     Finds supported images, shuffles and recycles poses
+│   ├── ImagePreloaderService.java  Previous/current/next image cache and size limits
+│   ├── PreferencesService.java     Saved settings
+│   └── SessionManager.java         Session timing, navigation and progress
+└── ui/
+    ├── MainScreen.java        Session setup
+    ├── PhaseEditor.java       Phase plan editor
+    ├── SessionScreen.java     Drawing session view
+    └── SummaryScreen.java     End-of-session summary
+
+src/main/resources/styles.css  Dark theme
+src/test/java/                 JUnit 5 tests
+packaging/app-icon.ico         Windows app icon
+```
 
 ---
 
-## 📄 License
+## Roadmap
 
-This project is open-source and available under the [MIT License](LICENSE).
+- [x] **v1** — Timed sessions, shuffling, image cache, saved settings, summary gallery
+- [x] **v3** — Phased sessions (warm-up sequences)
+- [ ] **v2** — Practice history (dates, durations and pose counts saved locally)
+- [ ] **v4** — Practice statistics and charts
+- [ ] **v5** — Goals and habit tracking
+
+---
+
+## License
+
+[MIT](LICENSE)

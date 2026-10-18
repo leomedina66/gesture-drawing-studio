@@ -7,6 +7,7 @@ import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.Tooltip;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
@@ -19,12 +20,13 @@ import java.util.List;
  * Fits the exact same standardized menu dimensions (600x760) without window scrollbars.
  */
 public class SummaryScreen extends VBox {
+    private static final double THUMBNAIL_SIZE = 110;
 
     public SummaryScreen(SessionResult result, Runnable onNewSession) {
         setSpacing(16);
         setAlignment(Pos.CENTER);
         setPadding(new Insets(20, 24, 20, 24));
-        setStyle("-fx-background-color: #0F1117;");
+        getStyleClass().add("screen-root");
 
         // Header Section
         VBox headerBox = new VBox(4);
@@ -63,25 +65,21 @@ public class SummaryScreen extends VBox {
         thumbnailGrid.setHgap(10);
         thumbnailGrid.setVgap(10);
         thumbnailGrid.setPadding(new Insets(10));
-        thumbnailGrid.setStyle("-fx-background-color: #161821; -fx-background-radius: 8px;");
+        thumbnailGrid.getStyleClass().add("thumbnail-grid");
 
         List<GestureImage> images = result.getImagesUsed();
         if (images.isEmpty()) {
             Label emptyLabel = new Label("No images were completed in this session.");
-            emptyLabel.setStyle("-fx-text-fill: #9CA3AF;");
+            emptyLabel.getStyleClass().add("muted-text");
             thumbnailGrid.getChildren().add(emptyLabel);
         } else {
             for (GestureImage gestureImg : images) {
                 VBox thumbCard = new VBox();
                 thumbCard.getStyleClass().add("thumbnail-card");
 
-                ImageView thumbView = new ImageView();
-                try {
-                    Image img = new Image(gestureImg.getFileUri(), 110, 110, true, true, true);
-                    thumbView.setImage(img);
-                } catch (Exception ex) {
-                    System.err.println("Error rendering thumbnail: " + gestureImg.getFileName());
-                }
+                // Decoded in the background straight at thumbnail size to keep the gallery light
+                ImageView thumbView = new ImageView(new Image(gestureImg.getFileUri(), THUMBNAIL_SIZE, THUMBNAIL_SIZE, true, true, true));
+                Tooltip.install(thumbCard, new Tooltip(gestureImg.getFileName()));
 
                 thumbCard.getChildren().add(thumbView);
                 thumbnailGrid.getChildren().add(thumbCard);
@@ -91,7 +89,7 @@ public class SummaryScreen extends VBox {
         ScrollPane galleryScroll = new ScrollPane(thumbnailGrid);
         galleryScroll.setFitToWidth(true);
         galleryScroll.setMaxHeight(260);
-        galleryScroll.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
+        galleryScroll.getStyleClass().add("gallery-scroll");
 
         gallerySection.getChildren().addAll(galleryTitle, galleryScroll);
 
@@ -105,7 +103,7 @@ public class SummaryScreen extends VBox {
         getChildren().addAll(headerBox, card);
     }
 
-    private VBox createStatCard(String labelText, String valueText) {
+    private static VBox createStatCard(String labelText, String valueText) {
         VBox card = new VBox(4);
         card.setAlignment(Pos.CENTER);
         card.setPadding(new Insets(12, 18, 12, 18));
@@ -113,10 +111,10 @@ public class SummaryScreen extends VBox {
         card.setPrefWidth(210);
 
         Label label = new Label(labelText);
-        label.setStyle("-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #9CA3AF;");
+        label.getStyleClass().add("stat-label");
 
         Label value = new Label(valueText);
-        value.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #10B981;");
+        value.getStyleClass().add("stat-value");
 
         card.getChildren().addAll(label, value);
         return card;

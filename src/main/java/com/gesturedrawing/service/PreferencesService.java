@@ -1,6 +1,9 @@
 package com.gesturedrawing.service;
 
+import com.gesturedrawing.domain.SessionPhase;
+
 import java.io.File;
+import java.util.List;
 import java.util.prefs.Preferences;
 
 /**
@@ -18,11 +21,22 @@ public class PreferencesService {
     private static final String KEY_ALWAYS_ON_TOP = "ALWAYS_ON_TOP";
     private static final String KEY_DEFAULT_FLIPPED = "DEFAULT_FLIPPED";
     private static final String KEY_DEFAULT_GRAYSCALE = "DEFAULT_GRAYSCALE";
+    private static final String KEY_PHASED_MODE = "PHASED_MODE";
+    private static final String KEY_PHASES = "SESSION_PHASES";
 
-    private final Preferences preferences = Preferences.userNodeForPackage(PreferencesService.class);
+    private final Preferences preferences;
+
+    public PreferencesService() {
+        this(Preferences.userNodeForPackage(PreferencesService.class));
+    }
+
+    /** Allows an isolated preferences node (e.g. in tests). */
+    public PreferencesService(Preferences preferences) {
+        this.preferences = preferences;
+    }
 
     public void saveLastFolder(File folder) {
-        if (folder != null && folder.exists() && folder.isDirectory()) {
+        if (folder != null && folder.isDirectory()) {
             preferences.put(KEY_LAST_FOLDER, folder.getAbsolutePath());
         }
     }
@@ -31,7 +45,7 @@ public class PreferencesService {
         String path = preferences.get(KEY_LAST_FOLDER, null);
         if (path != null) {
             File folder = new File(path);
-            if (folder.exists() && folder.isDirectory()) {
+            if (folder.isDirectory()) {
                 return folder;
             }
         }
@@ -51,12 +65,19 @@ public class PreferencesService {
         return preferences.getInt(KEY_LAST_COUNT, defaultValue);
     }
 
+    /** Saves the session window's normal (non-maximized) bounds plus its maximized state. */
     public void saveWindowBounds(double width, double height, double x, double y, boolean isMaximized) {
         preferences.putDouble(KEY_WINDOW_WIDTH, width);
         preferences.putDouble(KEY_WINDOW_HEIGHT, height);
         preferences.putDouble(KEY_WINDOW_X, x);
         preferences.putDouble(KEY_WINDOW_Y, y);
         preferences.putBoolean(KEY_WINDOW_MAXIMIZED, isMaximized);
+    }
+
+    /** Saves only the window position (used by the fixed-size menu screens). */
+    public void saveWindowPosition(double x, double y) {
+        preferences.putDouble(KEY_WINDOW_X, x);
+        preferences.putDouble(KEY_WINDOW_Y, y);
     }
 
     public double getWindowWidth(double defaultValue) {
@@ -101,5 +122,23 @@ public class PreferencesService {
 
     public boolean isDefaultGrayscale(boolean defaultValue) {
         return preferences.getBoolean(KEY_DEFAULT_GRAYSCALE, defaultValue);
+    }
+
+    public void savePhasedMode(boolean phased) {
+        preferences.putBoolean(KEY_PHASED_MODE, phased);
+    }
+
+    public boolean isPhasedMode(boolean defaultValue) {
+        return preferences.getBoolean(KEY_PHASED_MODE, defaultValue);
+    }
+
+    public void savePhases(List<SessionPhase> phases) {
+        preferences.put(KEY_PHASES, SessionPhase.serialize(phases));
+    }
+
+    /** Last phase plan, or {@code defaultValue} when none (or nothing valid) was saved. */
+    public List<SessionPhase> getPhases(List<SessionPhase> defaultValue) {
+        List<SessionPhase> phases = SessionPhase.parse(preferences.get(KEY_PHASES, null));
+        return phases.isEmpty() ? defaultValue : phases;
     }
 }

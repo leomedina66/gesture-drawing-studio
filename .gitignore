@@ -1,6 +1,7 @@
 # Maven Target
 target/
 *.class
+dependency-reduced-pom.xml
 
 # IDE & Editor files
 .idea/
@@ -17,3 +18,6 @@ desktop.ini
 
 # Logs
 *.log
+
+# Native app image produced by build-installer.bat
+dist/
